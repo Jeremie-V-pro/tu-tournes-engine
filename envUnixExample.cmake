@@ -1,0 +1,1 @@
+set(TINYOBJ_PATH = /home/neo/Documents/dev/vulkan-tuto/external/tinyobjloader)
