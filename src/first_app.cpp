@@ -69,14 +69,13 @@ void FirstApp::run() {
 
   //TEXTURE
 
-  LveTexture texture{lveDevice, "textures/texture.jpg"};
-
+  texture = std::make_unique<LveTexture>(lveDevice, "textures/texture.jpg");
   
   //create VkdescriptorImageInfo from texture
   VkDescriptorImageInfo imageInfo{};
-  imageInfo.sampler = texture.getSampler();
-  imageInfo.imageView = texture.getImageView();
-  imageInfo.imageLayout = texture.getImageLayout();
+  imageInfo.sampler = texture->getSampler();
+  imageInfo.imageView = texture->getImageView();
+  imageInfo.imageLayout = texture->getImageLayout();
   
   std::cout << "10" << std::endl;
   
@@ -163,7 +162,7 @@ void FirstApp::run() {
 
 void FirstApp::loadGameObjects() {
   
-  std::shared_ptr<LveModel> lveModel = LveModel::createModelFromFile(lveDevice, "models/test.obj");
+  std::shared_ptr<LveModel> lveModel = LveModel::createModelFromFile(lveDevice, "models/smooth_vase.obj");
   auto flatVase = LveGameObject::createGameObject();
   flatVase.model = lveModel;
   flatVase.transform.translation = {-.7f, -0.1f, 0.f};

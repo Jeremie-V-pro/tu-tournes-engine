@@ -17,6 +17,8 @@ class LveTexture{
 
     LveTexture(const LveTexture &) = delete;
     LveTexture &operator=(const LveTexture &) = delete;
+    LveTexture(LveTexture &&) = delete;
+    LveTexture &operator=(LveTexture &&) = delete;
 
     VkSampler getSampler() const { return sampler; }
     VkImageView getImageView() const { return imageView; }

@@ -5,6 +5,7 @@
 #include "lve_game_object.hpp"
 #include "lve_renderer.hpp"
 #include "lve_descriptor.hpp"
+#include "lve_texture.hpp"
 
 #include <memory>
 #include <vector>
@@ -31,6 +32,7 @@ private:
   
   //l'ordre de déclaration compte
   std::unique_ptr<LveDescriptorPool> globalPool{};
+  std::unique_ptr<LveTexture> texture{};
   LveGameObject::Map gameObjects;
 };
 } // namespace lve

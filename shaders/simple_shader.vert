@@ -16,29 +16,24 @@ struct PointLight {
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
-    mat4 projection;
-    mat4 view;
-    mat4 invView;
-    vec4 ambiantLightColor; // w is intensity
-    PointLight pointLights[10]; // a modifier quand la constante MAX_LIGHTS sera définie
-    int numLights;
+  mat4 projection;
+  mat4 view;
+  mat4 invView;
+  vec4 ambientLightColor; // w is intensity
+  PointLight pointLights[10];
+  int numLights;
 } ubo;
 
-
-layout(push_constant) uniform Push{
-    mat4 modelMatrix;
-    mat4 normalMatrix;
+layout(push_constant) uniform Push {
+  mat4 modelMatrix;
+  mat4 normalMatrix;
 } push;
 
-
-const float AMBIENT = 0.02;
-
-void main(){
-    vec4 positionWorld =  push.modelMatrix * vec4(position, 1.0);
-    gl_Position = ubo.projection * ubo.view * positionWorld;
-
-    fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
-    fragPosWorld = positionWorld.xyz;
-    fragColor = color;
-    fragUV = uv;
+void main() {
+  vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
+  gl_Position = ubo.projection * ubo.view * positionWorld;
+  fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
+  fragPosWorld = positionWorld.xyz;
+  fragColor = color;
+  fragUV = uv;
 }
