@@ -22,7 +22,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
-
 #include <array>
 #include <chrono>
 #include <memory>
@@ -32,6 +31,7 @@
 
 
 #include <filesystem>
+
 namespace fs = std::filesystem;
 
 namespace lve {
@@ -42,11 +42,23 @@ FirstApp::FirstApp() {
                    .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                    .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                    .build();
-               
-               
+
+  textureSetLayout = LveDescriptorSetLayout::Builder(lveDevice)
+  .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+  .build();
+  // std::unique_ptr<LveDescriptorPool> firstTexturePool = LveDescriptorPool::Builder(lveDevice)
+  //                  .setMaxSets(1)
+  //                  .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, LveSwapChain::MAX_FRAMES_IN_FLIGHT)
+  //                  .build();
+  // texturePool.push_back(std::move(firstTexturePool));
+  
   loadGameObjects();
 }
+
+
 FirstApp::~FirstApp() {}
+
+
 
 void FirstApp::run() {
   
@@ -62,39 +74,48 @@ void FirstApp::run() {
   
   auto globalSetLayout = LveDescriptorSetLayout::Builder(lveDevice)
   .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-  .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+  // .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
   .build();
 
-
+  
 
   //TEXTURE
 
-  texture = std::make_unique<LveTexture>(lveDevice, "textures/texture.jpg");
+  // texture = std::make_unique<LveTexture>(lveDevice, "textures/texture.jpg", textureSetLayout.get());
   
   //create VkdescriptorImageInfo from texture
-  VkDescriptorImageInfo imageInfo{};
-  imageInfo.sampler = texture->getSampler();
-  imageInfo.imageView = texture->getImageView();
-  imageInfo.imageLayout = texture->getImageLayout();
+  // VkDescriptorImageInfo imageInfo{};
+  // imageInfo.sampler = texture->getSampler();
+  // imageInfo.imageView = texture->getImageView();
+  // imageInfo.imageLayout = texture->getImageLayout();
   
-  std::cout << "10" << std::endl;
-  
+  std::cout << "A" << std::endl;
   std::vector<VkDescriptorSet> globalDescriptorSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
   for(int i = 0; i < globalDescriptorSets.size(); i++){
     auto bufferInfo = uboBuffers[i]->descriptorInfo();
     LveDescriptorWriter(*globalSetLayout, *globalPool)
     .writeBuffer(0, &bufferInfo)
-    .writeImage(1, &imageInfo)
+    // .writeImage(1, &imageInfo)
     .build(globalDescriptorSets[i]);
   }
+
+ 
+
+  // std::vector<VkDescriptorSet> textureDescriptorSets(1);
+  // for(int i = 0; i < textureDescriptorSets.size(); i++){
+  //   LveDescriptorWriter(*textureSetLayout, *texturePool[0])
+  //   .writeImage(0, &imageInfo)
+  //   .build(textureDescriptorSets[i]);
+  // }
   
-  std::cout << "20" << std::endl;
+
   SimpleRenderSystem simpleRenderSystem{lveDevice,
   lveRenderer.getSwapChainRenderPass(),
-  globalSetLayout->getDescriptorSetLayout()
+  globalSetLayout->getDescriptorSetLayout(),
+  textureSetLayout->getDescriptorSetLayout()
   };
   
-  std::cout << "30" << std::endl;
+
 
   PointLightSystem pointLightSystem{lveDevice,
   lveRenderer.getSwapChainRenderPass(),
@@ -172,7 +193,9 @@ void FirstApp::loadGameObjects() {
   
   
   lveModel = LveModel::createModelFromFile(lveDevice, "models/Rubber Duck jaune.obj");
+  std::shared_ptr<LveTexture> lveTexture = std::make_unique<LveTexture>(lveDevice, "textures/ayaka.jpg", textureSetLayout.get());
   auto smoothVase = LveGameObject::createGameObject();
+  smoothVase.texture = lveTexture;
   smoothVase.model = lveModel;
   smoothVase.transform.translation = {.5f, 0.5f, 0.0f};
   smoothVase.transform.scale = {0.3f, 0.3f, 0.3f};
@@ -180,8 +203,10 @@ void FirstApp::loadGameObjects() {
   gameObjects.emplace(smoothVase.getId(), std::move(smoothVase));
   
   lveModel = LveModel::createModelFromFile(lveDevice, "models/quad.obj");
+  lveTexture = std::make_unique<LveTexture>(lveDevice, "textures/texture.jpg", textureSetLayout.get());
   auto floor = LveGameObject::createGameObject();
   floor.model = lveModel;
+  floor.texture = lveTexture;
   floor.transform.translation = {0.f, .5f, 0.f};
   floor.transform.scale = {3.f, 1.f, 3.f};
   gameObjects.emplace(floor.getId(), std::move(floor));

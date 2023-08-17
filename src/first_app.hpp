@@ -33,6 +33,10 @@ private:
   //l'ordre de déclaration compte
   std::unique_ptr<LveDescriptorPool> globalPool{};
   std::unique_ptr<LveTexture> texture{};
+  std::vector<std::unique_ptr<LveDescriptorPool>> texturePool{};
+
+  std::unique_ptr<lve::LveDescriptorSetLayout> textureSetLayout;
+
   LveGameObject::Map gameObjects;
 };
 } // namespace lve

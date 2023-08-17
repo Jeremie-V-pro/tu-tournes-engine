@@ -76,6 +76,8 @@ class LveDescriptorPool {
   void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
  
   void resetPool();
+
+  
  
  private:
   LveDevice &lveDevice;

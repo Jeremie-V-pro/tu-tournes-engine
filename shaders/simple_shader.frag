@@ -20,7 +20,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
   PointLight pointLights[10];
   int numLights;
 } ubo;
-layout(set = 0, binding = 1) uniform sampler2D image;
+layout(set = 1, binding = 0) uniform sampler2D image;
 
 layout(push_constant) uniform Push {
   mat4 modelMatrix;

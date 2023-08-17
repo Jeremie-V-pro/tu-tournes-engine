@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lve_model.hpp"
+#include "lve_texture.hpp"
 
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -52,6 +53,8 @@ class LveGameObject {
     
     //optionnel
     std::shared_ptr<LveModel> model{};
+    std::shared_ptr<LveTexture> texture{};
+
     std::unique_ptr<PoinLightComponent> pointLight = nullptr;
     
   private:
