@@ -64,13 +64,13 @@ void PointLightSystem::createPipeLine(VkRenderPass renderPass) {
          "Cannot create pipeline before pipeline layout");
 
   PipelineConfigInfo pipelineConfig{};
-  LvePipeline::defaultPipeLineConfigInfo(pipelineConfig);
-  LvePipeline::enableAlphaBlending(pipelineConfig);
+  LveGPipeline::defaultPipeLineConfigInfo(pipelineConfig);
+  LveGPipeline::enableAlphaBlending(pipelineConfig);
   pipelineConfig.attributeDescriptions.clear();
   pipelineConfig.bindingDescriptions.clear();
   pipelineConfig.renderPass = renderPass;
   pipelineConfig.pipelineLayout = pipelineLayout;
-  lvePipeline = std::make_unique<LvePipeline>(
+  lveGPipeline = std::make_unique<LveGPipeline>(
       lveDevice,
       "shaders/point_light.vert.spv",
       "shaders/point_light.frag.spv",
@@ -121,7 +121,7 @@ void PointLightSystem::render(FrameInfo &frameInfo) {
     sorted[disSquared] = obj.getId();
   }
 
-  lvePipeline->bind(frameInfo.commandBuffer);
+  lveGPipeline->bind(frameInfo.commandBuffer);
   
   vkCmdBindDescriptorSets(
   frameInfo.commandBuffer,

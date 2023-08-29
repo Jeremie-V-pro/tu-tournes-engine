@@ -2,7 +2,7 @@
 
 #include "lve_camera.hpp"
 #include "lve_device.hpp"
-#include "lve_pipeline.hpp"
+#include "lve_g_pipeline.hpp"
 #include "lve_game_object.hpp"
 #include "lve_frame_info.hpp"
 
@@ -29,7 +29,7 @@ private:
 
   float time;
   LveDevice& lveDevice;
-  std::unique_ptr<LvePipeline> lvePipeline;
+  std::unique_ptr<LveGPipeline> lveGPipeline;
   VkPipelineLayout pipelineLayout;
 };
 } // namespace lve

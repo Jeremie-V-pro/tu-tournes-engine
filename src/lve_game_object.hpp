@@ -55,6 +55,9 @@ class LveGameObject {
     std::shared_ptr<LveModel> model{};
     std::shared_ptr<LveTexture> texture{};
 
+    std::unique_ptr<LveDescriptorPool> texturePool;
+    VkDescriptorSet textureDescriptorSet;
+
     std::unique_ptr<PoinLightComponent> pointLight = nullptr;
     
   private:

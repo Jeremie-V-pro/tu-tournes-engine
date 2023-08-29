@@ -2,6 +2,7 @@
 
 #include "lve_buffer.hpp"
 #include "lve_device.hpp"
+#include "lve_texture.hpp"
 
 // libs
 #define GLM_FORCE_RADIANS
@@ -49,9 +50,16 @@ class LveModel {
   void bind(VkCommandBuffer commandBuffer);
   void draw(VkCommandBuffer commandBuffer);
 
+  void createDescriptorSet(LveDevice &lveDevice, LveTexture *texture, LveDescriptorSetLayout *textureSetLayout);
+
+  std::unique_ptr<LveDescriptorPool> texturePool;
+  VkDescriptorSet textureDescriptorSet;
+
  private:
   void createVertexBuffers(const std::vector<Vertex> &vertices);
   void createIndexBuffers(const std::vector<uint32_t> &indices);
+
+  
 
   LveDevice &lveDevice;
 

@@ -12,7 +12,7 @@ namespace lve{
 class LveTexture{
   public:
 
-    LveTexture(LveDevice& device, const std::string& texturePath, LveDescriptorSetLayout *textureSetLayout);
+    LveTexture(LveDevice& device, const std::string& filepath, bool isComputeTexture);
     ~LveTexture();
 
     LveTexture(const LveTexture &) = delete;
@@ -20,13 +20,21 @@ class LveTexture{
     LveTexture(LveTexture &&) = delete;
     LveTexture &operator=(LveTexture &&) = delete;
 
+   
+
     VkSampler getSampler() const { return sampler; }
     VkImageView getImageView() const { return imageView; }
     VkImageLayout getImageLayout() const { return imageLayout; }
 
-    std::unique_ptr<LveDescriptorPool> texturePool;
-    VkDescriptorSet textureDescriptorSet;
+    void objectTextureConstructor(LveDevice& device, const std::string& filepath);
 
+    void computeTextureConstructor(LveDevice& device, const std::string& filepath);
+
+
+
+    
+
+    
 
   private:
 
@@ -39,6 +47,8 @@ class LveTexture{
     VkImageLayout imageLayout;
 
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    
 
 };
 }

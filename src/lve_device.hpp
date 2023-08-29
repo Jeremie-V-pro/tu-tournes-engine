@@ -15,7 +15,8 @@ struct SwapChainSupportDetails {
 };
 
 struct QueueFamilyIndices {
-  uint32_t graphicsFamily;
+  // uint32_t graphicsFamily;
+  uint32_t graphicsAndComputeFamily;
   uint32_t presentFamily;
   bool graphicsFamilyHasValue = false;
   bool presentFamilyHasValue = false;
@@ -74,6 +75,14 @@ class LveDevice {
       VkDeviceMemory &imageMemory);
 
   VkPhysicalDeviceProperties properties;
+
+  void copyBufferToImage(
+    VkBuffer buffer,
+     VkImage image, 
+     uint32_t width, 
+     uint32_t height, 
+     uint32_t layerCount, 
+     VkImageLayout imageLayout);
 
  private:
   void createInstance();

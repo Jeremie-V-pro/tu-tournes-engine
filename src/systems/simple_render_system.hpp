@@ -2,7 +2,7 @@
 
 #include "lve_camera.hpp"
 #include "lve_device.hpp"
-#include "lve_pipeline.hpp"
+#include "lve_g_pipeline.hpp"
 #include "lve_game_object.hpp"
 #include "lve_frame_info.hpp"
 
@@ -13,6 +13,7 @@
 namespace lve {
 class SimpleRenderSystem {
 public:
+
 
   SimpleRenderSystem(LveDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout, VkDescriptorSetLayout textureSetLayout);
   ~SimpleRenderSystem();
@@ -28,7 +29,7 @@ private:
 
 
   LveDevice& lveDevice;
-  std::unique_ptr<LvePipeline> lvePipeline;
+  std::unique_ptr<LveGPipeline> lveGPipeline;
   VkPipelineLayout pipelineLayout;
 };
 } // namespace lve

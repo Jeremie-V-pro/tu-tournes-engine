@@ -63,18 +63,18 @@ namespace lve
            "Cannot create pipeline before pipeline layout");
 
     PipelineConfigInfo pipelineConfig{};
-    LvePipeline::defaultPipeLineConfigInfo(pipelineConfig);
+    LveGPipeline::defaultPipeLineConfigInfo(pipelineConfig);
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = pipelineLayout;
-    lvePipeline = std::make_unique<LvePipeline>(
+    lveGPipeline = std::make_unique<LveGPipeline>(
         lveDevice, "shaders/simple_shader.vert.spv",
         "shaders/simple_shader.frag.spv", pipelineConfig);
   }
 
   void SimpleRenderSystem::renderGameObjects(FrameInfo &frameInfo)
   {
-    lvePipeline->bind(frameInfo.commandBuffer);
-    std::cout << "ici" << std::endl;
+    lveGPipeline->bind(frameInfo.commandBuffer);
+
     vkCmdBindDescriptorSets(
         frameInfo.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -82,13 +82,13 @@ namespace lve
         0, 1,
         &frameInfo.globalDescriptorSet,
         0, nullptr);
-    std::cout << "ou la bas" << std::endl;
+
     for (auto &kv : frameInfo.gameObjects)
     {
       auto &obj = kv.second;
       if (obj.model == nullptr)
         continue;
-      std::cout << "la putain de ces mort" << std::endl;
+
       if (obj.texture != nullptr)
       {
         vkCmdBindDescriptorSets(
@@ -96,11 +96,11 @@ namespace lve
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipelineLayout,
             1, 1,
-            &obj.texture->textureDescriptorSet,
+            &obj.model->textureDescriptorSet,
             0, nullptr);
       }
 
-      std::cout << "blurp" << std::endl;
+
       SimplePushConstantData push{};
       push.modelMatrix = obj.transform.mat4();
       push.normalMatrix = obj.transform.normalMatrix();

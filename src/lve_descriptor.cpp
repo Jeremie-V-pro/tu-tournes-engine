@@ -3,10 +3,12 @@
 // std
 #include <cassert>
 #include <stdexcept>
+#include <iostream>
+
 
 namespace lve {
 
-  
+  std::unique_ptr<LveDescriptorSetLayout> LveDescriptorSetLayout::defaultTextureSetLayout;
 
 
 // *************** Descriptor Set Layout Builder *********************
@@ -163,6 +165,7 @@ LveDescriptorWriter &LveDescriptorWriter::writeBuffer(
 
 LveDescriptorWriter &LveDescriptorWriter::writeImage(
     uint32_t binding, VkDescriptorImageInfo *imageInfo) {
+      
   assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
   auto &bindingDescription = setLayout.bindings[binding];
@@ -179,6 +182,7 @@ LveDescriptorWriter &LveDescriptorWriter::writeImage(
   write.descriptorCount = 1;
 
   writes.push_back(write);
+  
   return *this;
 }
 
