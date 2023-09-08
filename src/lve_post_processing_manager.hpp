@@ -9,16 +9,14 @@
 
 namespace lve
 {
-  class LvePostProcessingRenderer
+  class LvePostProcessingManager
   {
   public:
-    LvePostProcessingRenderer(LveDevice &deviceRef, VkExtent2D windowExtent);
-    ~LvePostProcessingRenderer();
-
-    LvePostProcessingRenderer(const LvePostProcessingRenderer &) = delete;
-    LvePostProcessingRenderer &operator=(const LvePostProcessingRenderer &) = delete;
+    LvePostProcessingManager(LveDevice &deviceRef, VkExtent2D windowExtent);
+    ~LvePostProcessingManager();
     
     void createTexture();
+    void reCreateTexture(VkExtent2D windowExtent);
     void createDescriptorPool();
     void createDescriptorSet();
     
@@ -28,6 +26,12 @@ namespace lve
     void clearPostProcessings();
 
     void drawPostProcessings(FrameInfo frameInfo);
+
+    //const function that returns vector "postProcessings"
+    std::vector<std::shared_ptr<LveIPostProcessing>>& getPostProcessings() {
+        return postProcessings;
+    }
+
 
   private:
     LveDevice &lveDevice;

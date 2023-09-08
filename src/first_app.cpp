@@ -46,14 +46,14 @@ namespace lve
                      .build();
 
     // Set default descriptor layout
-    LveDescriptorSetLayout::Builder setLayoutBuilder(lveDevice);
-    setLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    LveDescriptorSetLayout::defaultTextureSetLayout = setLayoutBuilder.build();
+    std::shared_ptr<LveDescriptorSetLayout::Builder>setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
+    setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    LveDescriptorSetLayout::defaultTextureSetLayout = setLayoutBuilder->build();
 
-    LveDescriptorSetLayout::Builder setLayoutBuilder(lveDevice);
-    setLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
-    setLayoutBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
-    LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout = setLayoutBuilder.build();
+    setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
+    setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
+    setLayoutBuilder->addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
+    LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout = setLayoutBuilder->build();
 
     loadGameObjects();
   }
@@ -62,6 +62,9 @@ namespace lve
 
   void FirstApp::run()
   {
+
+    std::cout << "FirstApp::run()" << std::endl;
+
     // Création des uniform buffer pour chaques frames
     std::vector<std::unique_ptr<LveBuffer>> uboBuffers(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
     for (int i = 0; i < uboBuffers.size(); i++)
@@ -110,80 +113,6 @@ namespace lve
     viewerObject.transform.translation.z = -2.5f;
     KeyboardMouvementController cameraController{};
 
-    /*Create temp data to check if compute shader work */
-    VkCommandBuffer testBuffer;
-
-
-
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = lveDevice.getCommandPool();
-    allocInfo.commandBufferCount = static_cast<uint32_t>(1);
-
-    if (vkAllocateCommandBuffers(lveDevice.device(), &allocInfo,
-                                 &testBuffer) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to allocate commande buffers!");
-    }
-
-
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (vkBeginCommandBuffer(testBuffer, &beginInfo) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    simpleComputeSystem.executeCpS(testBuffer, textureDescriptorSet);
-
-
-    if (vkEndCommandBuffer(testBuffer) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to record command buffer!");
-    }
-
-    VkFence computeInFlightFences;
-    VkSemaphore computeFinishedSemaphores;
-
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    if (vkCreateSemaphore(lveDevice.device(), &semaphoreInfo, nullptr, &computeFinishedSemaphores) != VK_SUCCESS ||
-        vkCreateFence(lveDevice.device(), &fenceInfo, nullptr, &computeInFlightFences) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to create compute synchronization objects for a frame!");
-    }
-
-    vkWaitForFences(lveDevice.device(), 1, &computeInFlightFences, VK_TRUE, UINT64_MAX);
-
-
-
-    vkResetFences(lveDevice.device(), 1, &computeInFlightFences);
-
-    // vkResetCommandBuffer(testBuffer, /*VkCommandBufferResetFlagBits*/ 0);
-    VkSubmitInfo submitInfo{};
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &testBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &computeFinishedSemaphores;
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    if (vkQueueSubmit(lveDevice.graphicsQueue(), 1, &submitInfo, computeInFlightFences) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to submit compute command buffer!");
-    };
-
-    std::cout << std::endl
-              << "5" << std::endl;
-
-    /*En of temp data*/
     auto currentTime = std::chrono::high_resolution_clock::now();
     while (!lveWindow.shouldClose())
     {

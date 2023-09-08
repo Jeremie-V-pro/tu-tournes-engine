@@ -1,0 +1,7 @@
+# Hashes of file build rules.
+c4a57fb99fa8d3ed2f01ab7d47164ccd /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv
+a73f05538326589277d089565c86332b /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv
+934aa7f81fa43567b4cbe0aa1b253d71 /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv
+6b98ba5b27d5308e51dfa408b73a0ccd /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv
+62803aefe34ee26a0793f9465e1ca058 /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv
+076ca9976d73b3e8ad47c3c33d0e0726 CMakeFiles/Shaders

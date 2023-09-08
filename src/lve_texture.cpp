@@ -67,7 +67,7 @@ namespace lve
         transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
         imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        lveDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage, static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1, imageLayout);
+        // lveDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage, static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1, imageLayout);
 
 
         

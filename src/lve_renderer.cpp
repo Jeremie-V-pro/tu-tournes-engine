@@ -2,6 +2,9 @@
 #include "lve_device.hpp"
 #include "lve_swap_chain.hpp"
 #include "lve_window.hpp"
+#include "lve_Ipost_processing.hpp"
+
+
 #include <GLFW/glfw3.h>
 #include <glm/fwd.hpp>
 #include <vulkan/vulkan_core.h>
@@ -10,12 +13,17 @@
 #include <array>
 #include <memory>
 #include <stdexcept>
+#include <iostream>
 
 namespace lve {
 
 
 
 LveRenderer::LveRenderer(LveWindow &window, LveDevice &device) : lveWindow{window}, lveDevice{device} {
+    std::shared_ptr<LveDescriptorSetLayout::Builder> setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
+    setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
+    setLayoutBuilder->addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
+    LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout = setLayoutBuilder->build();
   recreateSwapChain();
   createCommandBuffers();
 }
@@ -35,7 +43,17 @@ void LveRenderer::recreateSwapChain() {
 
   if (lveSwapChain == nullptr) {
     lveSwapChain = std::make_unique<LveSwapChain>(lveDevice, extent);
+    std::cout << "LveRenderer::recreateSwapChain" << std::endl;
+    postProcessingManager = std::make_unique<LvePostProcessingManager>(lveDevice, extent);
+    std::cout << "AAA" << std::endl;
   } else {
+    
+    std::vector<std::shared_ptr<LveIPostProcessing>> postProcessingEffect(postProcessingManager->getPostProcessings());
+    postProcessingManager = std::make_unique<LvePostProcessingManager>(lveDevice, extent);
+    for (auto& effect : postProcessingEffect) {
+      postProcessingManager->addPostProcessing(effect);
+    }
+
     std::shared_ptr<LveSwapChain> oldSwapChain = std::move(lveSwapChain);
     lveSwapChain = std::make_unique<LveSwapChain>(lveDevice, extent, oldSwapChain);
 
