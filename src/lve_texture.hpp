@@ -13,6 +13,7 @@ class LveTexture{
   public:
 
     LveTexture(LveDevice& device, const std::string& filepath, bool isComputeTexture);
+    LveTexture(LveDevice& device, int width, int height);
     ~LveTexture();
 
     LveTexture(const LveTexture &) = delete;
@@ -26,11 +27,11 @@ class LveTexture{
     VkImageView getImageView() const { return imageView; }
     VkImageLayout getImageLayout() const { return imageLayout; }
 
-    void objectTextureConstructor(LveDevice& device, const std::string& filepath);
+    void objectTextureConstructor(const std::string& filepath);
 
-    void computeTextureConstructor(LveDevice& device, const std::string& filepath);
+    void computeTextureConstructor(const std::string& filepath);
 
-
+    void postprocessingTextureConstructor(int width, int height);
 
     
 

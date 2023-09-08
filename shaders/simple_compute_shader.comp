@@ -3,12 +3,33 @@
 layout (binding = 0, rgba8) uniform readonly image2D inputImage;
 layout (binding = 1, rgba8) uniform writeonly image2D outputImage;
 
-layout (local_size_x = 16, local_size_y = 9, local_size_z = 1) in;
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+
+vec3 randomVec3(vec2 seed) {
+    float rand1 = fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
+    float rand2 = fract(sin(dot(seed, vec2(93.989, 67.345))) * 24634.634);
+    float rand3 = fract(sin(dot(seed, vec2(43.332, 93.532))) * 56456.423);
+
+    return vec3(rand1, rand2, rand3);
+}
+
 
 void main() 
 {
+  vec3 finalpixel = vec3(0.0f);
 
-  vec3 pixel = imageLoad(inputImage, ivec2(gl_GlobalInvocationID.xy)).rgb;
-  imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixel, 1.0));
+  for(uint x = gl_WorkGroupID.x -2 ; x <= gl_WorkGroupID.x + 2; x++)
+  {
+    for(uint y = gl_WorkGroupID.y -2 ; y <= gl_WorkGroupID.y + 2; y++)
+    {
+      vec3 pixel = imageLoad(inputImage, ivec2(x, y)).rgb;
+      finalpixel += pixel;
+    }
+  }
+  finalpixel = finalpixel / 125.0f ;
+  // finalpixel = randomVec3(vec2(gl_WorkGroupID.xy));
+  imageStore(outputImage, ivec2(gl_WorkGroupID.xy), vec4(finalpixel, 1.0));
 
 }
+

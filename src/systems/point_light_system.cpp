@@ -89,16 +89,16 @@ void PointLightSystem::update(FrameInfo &frameInfo, GlobalUbo &ubo) {
     if(obj.pointLight == nullptr) continue;
     
 
-    float r = 0.5f + 0.5f * std::sin(speed * time + lightIndex);
-    float g = 0.5f + 0.5f * std::sin(speed * time + lightIndex + 2.0f * M_PI / 3.0f);
-    float b = 0.5f + 0.5f * std::sin(speed * time + lightIndex+ 4.0f * M_PI / 3.0f);
-    glm::vec3 rgb = glm::vec3(r, g, b);
-    obj.color = rgb;
+    // float r = 0.5f + 0.5f * std::sin(speed * time + lightIndex);
+    // float g = 0.5f + 0.5f * std::sin(speed * time + lightIndex + 2.0f * M_PI / 3.0f);
+    // float b = 0.5f + 0.5f * std::sin(speed * time + lightIndex+ 4.0f * M_PI / 3.0f);
+    // glm::vec3 rgb = glm::vec3(r, g, b);
+    // obj.color = rgb;
     
     assert(lightIndex < MAX_LIGHTS && "Point light exceed maximum specified");
     
     // update light position
-    obj.transform.translation = glm::vec3 (rotateLight * glm::vec4 (obj.transform.translation, 1.f) );
+    // obj.transform.translation = glm::vec3 (rotateLight * glm::vec4 (obj.transform.translation, 1.f) );
     
     // copy light position
     ubo.pointLights[lightIndex].position = glm::vec4 (obj.transform.translation, 1.f);

@@ -5,13 +5,13 @@
 #include "lve_c_pipeline.hpp"
 #include "lve_game_object.hpp"
 #include "lve_frame_info.hpp"
-
+#include "lve_Ipost_processing.hpp"
 
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 namespace lve {
-class SimpleComputeSystem {
+class SimpleComputeSystem : public LveIPostProcessing{
 public:
 
   SimpleComputeSystem(LveDevice &device, VkDescriptorSetLayout textureSetLayout);
@@ -20,8 +20,7 @@ public:
   SimpleComputeSystem(const LveWindow &) = delete;
   SimpleComputeSystem &operator=(const LveWindow &) = delete;
 
-  void renderGameObjects(FrameInfo &frameInfo);
-  void executeCpS(VkCommandBuffer& commandBuffer, VkDescriptorSet computeDescriptorSets);
+  void executeCpS(FrameInfo FrameInfo, VkDescriptorSet computeDescriptorSets);
 
 
 private:

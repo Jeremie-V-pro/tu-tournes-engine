@@ -40,6 +40,8 @@ namespace lve
 
     static std::unique_ptr<lve::LveDescriptorSetLayout> defaultTextureSetLayout;
 
+    static std::unique_ptr<lve::LveDescriptorSetLayout> defaultPostProcessingTextureSetLayout;
+
   private:
     LveDevice &lveDevice;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -47,6 +49,8 @@ namespace lve
 
     friend class LveDescriptorWriter;
   };
+
+
 
   class LveDescriptorPool
   {
@@ -90,6 +94,9 @@ namespace lve
 
     friend class LveDescriptorWriter;
   };
+
+
+
 
   class LveDescriptorWriter
   {

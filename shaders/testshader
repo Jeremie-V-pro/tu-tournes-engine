@@ -1,0 +1,9 @@
+  // // //set 700x700 pixel to pink on output image with double for loop
+  // for (int machin = 0; machin < gl_NumWorkGroups.x; machin++) {
+  //   vec4 pixel = imageLoad(inputImage, ivec2(x, y)).rgba;
+  //   imageStore(outputImage, ivec2(x, y), pixel);
+  // }
+
+  // // vec3 pixel = imageLoad(inputImage, ivec2(gl_GlobalInvocationID.xy)).rgb;
+  // // imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixel, 1.0));
+  //vec4 pixel = imageLoad(inputImage, ivec2(gl_WorkGroupID.x, gl_LocalInvocationID.x)).rgba;

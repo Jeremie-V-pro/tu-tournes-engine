@@ -63,56 +63,13 @@ namespace lve
         lveDevice, "shaders/simple_compute_shader.comp.spv", pipelineConfig);
   }
 
-  void SimpleComputeSystem::renderGameObjects(FrameInfo &frameInfo)
+  void SimpleComputeSystem::executeCpS(FrameInfo frameInfo, VkDescriptorSet computeDescriptorSets)
   {
     lveCPipeline->bind(frameInfo.commandBuffer);
-
-    // lveGPipeline->bind(frameInfo.commandBuffer);
-
-    // vkCmdBindDescriptorSets(
-    //     frameInfo.commandBuffer,
-    //     VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //     pipelineLayout,
-    //     0, 1,
-    //     &frameInfo.globalDescriptorSet,
-    //     0, nullptr);
-
-    // for (auto &kv : frameInfo.gameObjects)
-    // {
-    //   auto &obj = kv.second;
-    //   if (obj.model == nullptr)
-    //     continue;
-
-    //   if (obj.texture != nullptr)
-    //   {
-    //     vkCmdBindDescriptorSets(
-    //         frameInfo.commandBuffer,
-    //         VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //         pipelineLayout,
-    //         1, 1,
-    //         &obj.model->textureDescriptorSet,
-    //         0, nullptr);
-    //   }
-
-    //   SimplePushConstantData push{};
-    //   push.modelMatrix = obj.transform.mat4();
-    //   push.normalMatrix = obj.transform.normalMatrix();
-    //   vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
-    //                      VK_SHADER_STAGE_VERTEX_BIT |
-    //                          VK_SHADER_STAGE_FRAGMENT_BIT,
-    //                      0, sizeof(SimplePushConstantData), &push);
-    //   obj.model->bind(frameInfo.commandBuffer);
-    //   obj.model->draw(frameInfo.commandBuffer);
-    // }
-  }
-
-  void SimpleComputeSystem::executeCpS(VkCommandBuffer &commandBuffer, VkDescriptorSet computeDescriptorSets)
-  {
-    lveCPipeline->bind(commandBuffer);
     
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &computeDescriptorSets, 0, 0);
+    vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &computeDescriptorSets, 0, 0);
     std::cout << "Dispatching" << std::endl;
-    vkCmdDispatch(commandBuffer, 45, 1, 1);
+    vkCmdDispatch(frameInfo.commandBuffer, 1280, 720, 1);
     std::cout << "cake" << std::endl;
   }
 } // namespace lve
