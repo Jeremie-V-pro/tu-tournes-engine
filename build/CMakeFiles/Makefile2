@@ -45,19 +45,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /usr/bin/cmake
+CMAKE_COMMAND = /home/neo/.local/lib/python3.11/site-packages/cmake/data/bin/cmake
 
 # The command to remove a file.
-RM = /usr/bin/cmake -E rm -f
+RM = /home/neo/.local/lib/python3.11/site-packages/cmake/data/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/neo/Documents/dev/AAAAA/vulkan-engine
+CMAKE_SOURCE_DIR = /home/neo/Documents/dev/vulkan-engine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/neo/Documents/dev/AAAAA/vulkan-engine/build
+CMAKE_BINARY_DIR = /home/neo/Documents/dev/vulkan-engine/build
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -82,14 +82,14 @@ clean: CMakeFiles/Shaders.dir/clean
 CMakeFiles/LveEngine.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/LveEngine.dir/build.make CMakeFiles/LveEngine.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/LveEngine.dir/build.make CMakeFiles/LveEngine.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 "Built target LveEngine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 "Built target LveEngine"
 .PHONY : CMakeFiles/LveEngine.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/LveEngine.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles 20
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/vulkan-engine/build/CMakeFiles 20
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/LveEngine.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/vulkan-engine/build/CMakeFiles 0
 .PHONY : CMakeFiles/LveEngine.dir/rule
 
 # Convenience name for target.
@@ -108,14 +108,14 @@ CMakeFiles/LveEngine.dir/clean:
 CMakeFiles/Shaders.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Shaders.dir/build.make CMakeFiles/Shaders.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Shaders.dir/build.make CMakeFiles/Shaders.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=21,22,23,24,25 "Built target Shaders"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=21,22,23,24,25 "Built target Shaders"
 .PHONY : CMakeFiles/Shaders.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Shaders.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/vulkan-engine/build/CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Shaders.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/neo/Documents/dev/vulkan-engine/build/CMakeFiles 0
 .PHONY : CMakeFiles/Shaders.dir/rule
 
 # Convenience name for target.

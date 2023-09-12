@@ -20,10 +20,6 @@ namespace lve {
 
 
 LveRenderer::LveRenderer(LveWindow &window, LveDevice &device) : lveWindow{window}, lveDevice{device} {
-    std::shared_ptr<LveDescriptorSetLayout::Builder> setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
-    setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
-    setLayoutBuilder->addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
-    LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout = setLayoutBuilder->build();
   recreateSwapChain();
   createCommandBuffers();
 }
@@ -43,16 +39,14 @@ void LveRenderer::recreateSwapChain() {
 
   if (lveSwapChain == nullptr) {
     lveSwapChain = std::make_unique<LveSwapChain>(lveDevice, extent);
-    std::cout << "LveRenderer::recreateSwapChain" << std::endl;
+
     postProcessingManager = std::make_unique<LvePostProcessingManager>(lveDevice, extent);
     std::cout << "AAA" << std::endl;
   } else {
     
-    std::vector<std::shared_ptr<LveIPostProcessing>> postProcessingEffect(postProcessingManager->getPostProcessings());
-    postProcessingManager = std::make_unique<LvePostProcessingManager>(lveDevice, extent);
-    for (auto& effect : postProcessingEffect) {
-      postProcessingManager->addPostProcessing(effect);
-    }
+    
+    postProcessingManager = std::make_unique<LvePostProcessingManager>(extent, postProcessingManager);
+
 
     std::shared_ptr<LveSwapChain> oldSwapChain = std::move(lveSwapChain);
     lveSwapChain = std::make_unique<LveSwapChain>(lveDevice, extent, oldSwapChain);
@@ -61,6 +55,7 @@ void LveRenderer::recreateSwapChain() {
       throw std::runtime_error("Swap chain image(or depth) format has changed!");
     }
   }
+  std::cout << "BBB" << std::endl;
   // plust tard
 }
 
@@ -117,6 +112,11 @@ void LveRenderer::endFrame(){
     throw std::runtime_error("failed to record command buffer!");
   }
   auto result = lveSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
+  
+}
+
+void LveRenderer::presentFrame(){
+  auto result = lveSwapChain->presentImage(&currentImageIndex);
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
       lveWindow.wasWindowResized()) {
     lveWindow.resetWindowResizedFlag();

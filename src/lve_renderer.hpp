@@ -33,6 +33,7 @@ public:
 
   VkCommandBuffer beginFrame();
   void endFrame();
+  void presentFrame();
   void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
   void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 

@@ -39,14 +39,14 @@ namespace lve
   FirstApp::FirstApp()
   {
 
-    
+    std::cout << "CACA" << std::endl;
     globalPool = LveDescriptorPool::Builder(lveDevice)
                      .setMaxSets(LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                      .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, LveSwapChain::MAX_FRAMES_IN_FLIGHT)
                      .build();
 
     // Set default descriptor layout
-    std::shared_ptr<LveDescriptorSetLayout::Builder>setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
+    std::shared_ptr<LveDescriptorSetLayout::Builder> setLayoutBuilder = std::make_shared<LveDescriptorSetLayout::Builder>(lveDevice);
     setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     LveDescriptorSetLayout::defaultTextureSetLayout = setLayoutBuilder->build();
 
@@ -54,7 +54,7 @@ namespace lve
     setLayoutBuilder->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
     setLayoutBuilder->addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
     LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout = setLayoutBuilder->build();
-
+    
     loadGameObjects();
   }
 
@@ -154,6 +154,7 @@ namespace lve
 
         lveRenderer.endSwapChainRenderPass(commandBuffer);
         lveRenderer.endFrame();
+        
       }
     }
 
@@ -182,6 +183,8 @@ namespace lve
     smoothVase.transform.rotation = {0.f, glm::radians(180.f), glm::radians(180.f)};
     gameObjects.emplace(smoothVase.getId(), std::move(smoothVase));
 
+    
+
     lveModel = LveModel::createModelFromFile(lveDevice, "models/quad.obj");
     lveTexture = std::make_unique<LveTexture>(lveDevice, "textures/texture.jpg", false);
     auto floor = LveGameObject::createGameObject();
@@ -192,15 +195,15 @@ namespace lve
     floor.transform.scale = {3.f, 1.f, 3.f};
     gameObjects.emplace(floor.getId(), std::move(floor));
 
-    lveModel = LveModel::createModelFromFile(lveDevice, "models/quad.obj");
-    auto test = LveGameObject::createGameObject();
-    (*lveModel).createDescriptorSet(lveDevice, texturedst.get(), nullptr);
-    test.model = lveModel;
-    test.texture = texturedst;
-    test.transform.translation = {0.f, -1.5f, 0.f};
-    test.transform.scale = {3.f, 1.f, 3.f};
-    test.transform.rotation = {0.f, glm::radians(180.f), glm::radians(180.f)};
-    gameObjects.emplace(test.getId(), std::move(test));
+    // lveModel = LveModel::createModelFromFile(lveDevice, "models/quad.obj");
+    // auto test = LveGameObject::createGameObject();
+    // (*lveModel).createDescriptorSet(lveDevice, texturedst.get(), nullptr);
+    // test.model = lveModel;
+    // test.texture = texturedst;
+    // test.transform.translation = {0.f, -1.5f, 0.f};
+    // test.transform.scale = {3.f, 1.f, 3.f};
+    // test.transform.rotation = {0.f, glm::radians(180.f), glm::radians(180.f)};
+    // gameObjects.emplace(test.getId(), std::move(test));
 
     std::vector<glm::vec3> lightColors{
         {1.f, .1f, .1f},
@@ -210,7 +213,7 @@ namespace lve
         {.1f, 1.f, 1.f},
         {1.f, 1.f, 1.f} //
     };
-
+    std::cout << "C'EST ptet ici" << std::endl;
     for (int i = 0; i < lightColors.size(); i++)
     {
       auto pointLight = LveGameObject::makePointLight(0.6f);

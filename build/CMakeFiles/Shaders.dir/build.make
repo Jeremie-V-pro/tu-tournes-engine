@@ -44,19 +44,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /usr/bin/cmake
+CMAKE_COMMAND = /home/neo/.local/lib/python3.11/site-packages/cmake/data/bin/cmake
 
 # The command to remove a file.
-RM = /usr/bin/cmake -E rm -f
+RM = /home/neo/.local/lib/python3.11/site-packages/cmake/data/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/neo/Documents/dev/AAAAA/vulkan-engine
+CMAKE_SOURCE_DIR = /home/neo/Documents/dev/vulkan-engine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/neo/Documents/dev/AAAAA/vulkan-engine/build
+CMAKE_BINARY_DIR = /home/neo/Documents/dev/vulkan-engine/build
 
 # Utility rule file for Shaders.
 
@@ -66,38 +66,38 @@ include CMakeFiles/Shaders.dir/compiler_depend.make
 # Include the progress variables for this target.
 include CMakeFiles/Shaders.dir/progress.make
 
-CMakeFiles/Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv
-CMakeFiles/Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv
-CMakeFiles/Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv
-CMakeFiles/Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv
-CMakeFiles/Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv
+CMakeFiles/Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag.spv
+CMakeFiles/Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert.spv
+CMakeFiles/Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp.spv
+CMakeFiles/Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag.spv
+CMakeFiles/Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert.spv
 
-/home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv"
-	/usr/bin/glslangValidator -V /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag -o /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv
+/home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag.spv: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag.spv"
+	/usr/bin/glslangValidator -V /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag -o /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag.spv
 
-/home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv"
-	/usr/bin/glslangValidator -V /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert -o /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv
+/home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert.spv: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert.spv"
+	/usr/bin/glslangValidator -V /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert -o /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert.spv
 
-/home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv"
-	/usr/bin/glslangValidator -V /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp -o /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv
+/home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp.spv: /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp.spv"
+	/usr/bin/glslangValidator -V /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp -o /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp.spv
 
-/home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv"
-	/usr/bin/glslangValidator -V /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag -o /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv
+/home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag.spv: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag.spv"
+	/usr/bin/glslangValidator -V /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag -o /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag.spv
 
-/home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv"
-	/usr/bin/glslangValidator -V /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert -o /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv
+/home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert.spv: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/neo/Documents/dev/vulkan-engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert.spv"
+	/usr/bin/glslangValidator -V /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert -o /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert.spv
 
 Shaders: CMakeFiles/Shaders
-Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.frag.spv
-Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/point_light.vert.spv
-Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_compute_shader.comp.spv
-Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.frag.spv
-Shaders: /home/neo/Documents/dev/AAAAA/vulkan-engine/shaders/simple_shader.vert.spv
+Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.frag.spv
+Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/point_light.vert.spv
+Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_compute_shader.comp.spv
+Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.frag.spv
+Shaders: /home/neo/Documents/dev/vulkan-engine/shaders/simple_shader.vert.spv
 Shaders: CMakeFiles/Shaders.dir/build.make
 .PHONY : Shaders
 
@@ -110,6 +110,6 @@ CMakeFiles/Shaders.dir/clean:
 .PHONY : CMakeFiles/Shaders.dir/clean
 
 CMakeFiles/Shaders.dir/depend:
-	cd /home/neo/Documents/dev/AAAAA/vulkan-engine/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/neo/Documents/dev/AAAAA/vulkan-engine /home/neo/Documents/dev/AAAAA/vulkan-engine /home/neo/Documents/dev/AAAAA/vulkan-engine/build /home/neo/Documents/dev/AAAAA/vulkan-engine/build /home/neo/Documents/dev/AAAAA/vulkan-engine/build/CMakeFiles/Shaders.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/neo/Documents/dev/vulkan-engine/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/neo/Documents/dev/vulkan-engine /home/neo/Documents/dev/vulkan-engine /home/neo/Documents/dev/vulkan-engine/build /home/neo/Documents/dev/vulkan-engine/build /home/neo/Documents/dev/vulkan-engine/build/CMakeFiles/Shaders.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/Shaders.dir/depend
 

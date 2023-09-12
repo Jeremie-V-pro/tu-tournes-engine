@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/neo/Documents/dev/AAAAA/vulkan-engine/external -I/home/neo/Documents/dev/AAAAA/vulkan-engine/src -I/home/neo/Documents/dev/AAAAA/vulkan-engine/external/tinyobjloader -I/home/neo/Documents/dev/AAAAA/vulkan-engine/external/stb_image
+CXX_INCLUDES = -I/home/neo/Documents/dev/vulkan-engine/external -I/home/neo/Documents/dev/vulkan-engine/src -I/home/neo/Documents/dev/vulkan-engine/external/tinyobjloader -I/home/neo/Documents/dev/vulkan-engine/external/stb_image
 
 CXX_FLAGS = 
 

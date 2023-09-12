@@ -59,7 +59,7 @@ LveSwapChain::~LveSwapChain() {
 
   // cleanup synchronization objects
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
+    vkDestroySemaphore(device.device(), (*renderFinishedSemaphores)[i], nullptr);
     vkDestroySemaphore(device.device(), imageAvailableSemaphores[i], nullptr);
     vkDestroyFence(device.device(), inFlightFences[i], nullptr);
   }
@@ -103,16 +103,21 @@ VkResult LveSwapChain::submitCommandBuffers(
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
 
-  VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+  VkSemaphore signalSemaphores[] = {(*renderFinishedSemaphores)[currentFrame]};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
-
-  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
-  if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
-      VK_SUCCESS) {
+  
+  
+  auto result = vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
+  if (result != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
   }
+  return result;
+}
 
+VkResult LveSwapChain::presentImage(uint32_t *imageIndex){
+
+  VkSemaphore signalSemaphores[] = {(*renderFinishedSemaphores)[currentFrame]};
   VkPresentInfoKHR presentInfo = {};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -126,7 +131,7 @@ VkResult LveSwapChain::submitCommandBuffers(
   presentInfo.pImageIndices = imageIndex;
 
   auto result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);
-
+  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
   currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
   return result;
@@ -350,7 +355,7 @@ void LveSwapChain::createDepthResources() {
 
 void LveSwapChain::createSyncObjects() {
   imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-  renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
   inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
   imagesInFlight.resize(imageCount(), VK_NULL_HANDLE);
 
@@ -364,7 +369,7 @@ void LveSwapChain::createSyncObjects() {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) !=
             VK_SUCCESS ||
-        vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) !=
+        vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &(*renderFinishedSemaphores)[i]) !=
             VK_SUCCESS ||
         vkCreateFence(device.device(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create synchronization objects for a frame!");

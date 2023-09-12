@@ -167,30 +167,28 @@ LveDescriptorWriter &LveDescriptorWriter::writeBuffer(
 LveDescriptorWriter &LveDescriptorWriter::writeImage(
     uint32_t binding, VkDescriptorImageInfo *imageInfo) {
 
-      std::cout << "j'en" << std::endl;
       
   assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
-  std::cout << "ai" << std::endl;
+ 
   auto &bindingDescription = setLayout.bindings[binding];
-  std::cout << "un" << std::endl;
+  
   assert(
       bindingDescription.descriptorCount == 1 &&
       "Binding single descriptor info, but binding expects multiple");
-  std::cout << "tout" << std::endl;
+
   VkWriteDescriptorSet write{};
   write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
   write.descriptorType = bindingDescription.descriptorType;
   write.dstBinding = binding;
   write.pImageInfo = imageInfo;
   write.descriptorCount = 1;
-  std::cout << "peut" << std::endl;
   writes.push_back(write);
-  std::cout << "mar" << std::endl;
+
   return *this;
 }
 
 bool LveDescriptorWriter::build(VkDescriptorSet &set) {
-  std::cout << "Building descriptor set" << std::endl;
+  
   bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
   if (!success) {
     return false;

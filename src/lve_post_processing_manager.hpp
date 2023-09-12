@@ -13,12 +13,13 @@ namespace lve
   {
   public:
     LvePostProcessingManager(LveDevice &deviceRef, VkExtent2D windowExtent);
+    LvePostProcessingManager(VkExtent2D windowExtent,LvePostProcessingManager &postProcessingManager);
     ~LvePostProcessingManager();
     
     void createTexture();
-    void reCreateTexture(VkExtent2D windowExtent);
     void createDescriptorPool();
     void createDescriptorSet();
+    void createSyncObjects();
     
 
     void addPostProcessing(std::shared_ptr<LveIPostProcessing> postProcessing);
@@ -41,7 +42,9 @@ namespace lve
     std::unique_ptr<LveDescriptorPool> postprocessingPool;
     std::vector<std::unique_ptr<LveTexture>> textures;
     std::vector<std::pair<VkDescriptorSet, VkDescriptorSet>> texturesDescriptorSets;
-    std::unique_ptr<VkDescriptorSetLayout> descriptorSetLayout;
     std::vector<std::shared_ptr<LveIPostProcessing>> postProcessings;
+
+    std::shared_ptr<std::vector<VkFence>> computeInFlightFences;
+    std::shared_ptr<std::vector<VkSemaphore>> computeFinishedSemaphores;
   };
 }
