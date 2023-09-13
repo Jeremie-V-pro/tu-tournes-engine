@@ -26,6 +26,7 @@ class LveTexture{
     VkSampler getSampler() const { return sampler; }
     VkImageView getImageView() const { return imageView; }
     VkImageLayout getImageLayout() const { return imageLayout; }
+    VkImage getTextureImage() const { return textureImage; }
 
     void objectTextureConstructor(const std::string& filepath);
 

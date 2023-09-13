@@ -20,13 +20,19 @@ namespace lve
     void createDescriptorPool();
     void createDescriptorSet();
     void createSyncObjects();
-    
+    void createImageBarrier();
 
     void addPostProcessing(std::shared_ptr<LveIPostProcessing> postProcessing);
     
     void clearPostProcessings();
 
     void drawPostProcessings(FrameInfo frameInfo);
+
+    void copySwapChainImageToTexture(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage);
+
+    void copyTextureToSwapChainImage(FrameInfo frameInfo);
+
+
 
     //const function that returns vector "postProcessings"
     std::vector<std::shared_ptr<LveIPostProcessing>>& getPostProcessings() {
@@ -43,7 +49,7 @@ namespace lve
     std::vector<std::unique_ptr<LveTexture>> textures;
     std::vector<std::pair<VkDescriptorSet, VkDescriptorSet>> texturesDescriptorSets;
     std::vector<std::shared_ptr<LveIPostProcessing>> postProcessings;
-
+    std::vector<VkImageMemoryBarrier> imagesBarrier;
     std::shared_ptr<std::vector<VkFence>> computeInFlightFences;
     std::shared_ptr<std::vector<VkSemaphore>> computeFinishedSemaphores;
   };

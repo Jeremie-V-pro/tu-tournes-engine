@@ -12,6 +12,8 @@ namespace lve
     createDescriptorPool();
 
     createDescriptorSet();
+
+    createImageBarrier();
   }
 
   LvePostProcessingManager::LvePostProcessingManager(VkExtent2D windowExtent, LvePostProcessingManager &postProcessingManager) : lveDevice{postProcessingManager.lveDevice}, windowExtent{windowExtent}, postProcessings{postProcessingManager.postProcessings}, computeInFlightFences{postProcessingManager.computeInFlightFences}, computeFinishedSemaphores{postProcessingManager.computeFinishedSemaphores}
@@ -35,8 +37,6 @@ namespace lve
       textures[i] = std::make_unique<LveTexture>(lveDevice, windowExtent.width, windowExtent.height);
     }
   }
-
-
 
   void LvePostProcessingManager::createDescriptorPool()
   {
@@ -91,12 +91,14 @@ namespace lve
 
   void LvePostProcessingManager::drawPostProcessings(FrameInfo frameInfo)
   {
-
+    copySwapChainImageToTexture(frameInfo);
     for (int i = 0; i < postProcessings.size(); i++)
     {
+      vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imagesBarrier[frameInfo.frameIndex + (i%2)]);
       postProcessings[i]->executeCpS(frameInfo, texturesDescriptorSets[frameInfo.frameIndex].first);
       std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
     }
+    copyTextureToSwapChainImage(frameInfo);
   }
 
   void LvePostProcessingManager::createSyncObjects()
@@ -118,5 +120,38 @@ for (size_t i = 0; i < LveSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
     }
 }
   }
+
+  void LvePostProcessingManager::createImageBarrier(){
+    imagesBarrier.resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
+    //loop in textures
+    for(auto &texture : textures){
+      VkImageMemoryBarrier imagesBarrier{};
+      imagesBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      imagesBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+			imagesBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			imagesBarrier.image = texture->getTextureImage();
+			// imagesBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			imagesBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+			imagesBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			imagesBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			imagesBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    }
+  }
+
+  void LvePostProcessingManager::copySwapChainImageToTexture(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage){
+    VkImageMemoryBarrier transferImageBarrier{};
+      transferImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      transferImageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+			transferImageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			transferImageBarrier.image = postprocessingImage;
+			// imagesBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			transferImageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+			transferImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			transferImageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			transferImageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  }
+
+  void LvePostProcessingManager::copySwapChainImageToTexture(FrameInfo frameInfo){}
+
 
 }
