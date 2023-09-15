@@ -42,6 +42,14 @@ class LveSwapChain {
 
   VkResult presentImage(uint32_t *imageIndex);
 
+  VkSemaphore getActualRenderFinishedSemaphores() const {
+    return renderFinishedSemaphores[currentFrame];
+  }
+
+  VkImage getActualswapChainImages() const {
+    return swapChainImages[currentFrame];
+  }
+
 
   bool compareSwapFormats(const LveSwapChain& swapChain) const {
     return swapChain.swapChainDepthFormat == swapChainDepthFormat && swapChain.swapChainImageFormat == swapChainImageFormat;
@@ -83,7 +91,7 @@ class LveSwapChain {
   std::shared_ptr<LveSwapChain> oldSwapChain;
 
   std::vector<VkSemaphore> imageAvailableSemaphores;
-  std::shared_ptr<std::vector<VkSemaphore>> renderFinishedSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
   std::vector<VkFence> inFlightFences;
   std::vector<VkFence> imagesInFlight;
   size_t currentFrame = 0;

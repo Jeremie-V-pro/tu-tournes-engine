@@ -26,11 +26,11 @@ namespace lve
     
     void clearPostProcessings();
 
-    void drawPostProcessings(FrameInfo frameInfo);
+    void drawPostProcessings(FrameInfo frameInfo, VkImage swapChainImage, VkSemaphore renderFinishedSemaphore);
 
     void copySwapChainImageToTexture(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage);
 
-    void copyTextureToSwapChainImage(FrameInfo frameInfo);
+    void copyTextureToSwapChainImage(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage);
 
 
 

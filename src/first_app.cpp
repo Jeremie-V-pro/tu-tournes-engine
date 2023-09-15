@@ -114,6 +114,9 @@ namespace lve
     KeyboardMouvementController cameraController{};
 
     auto currentTime = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Ya quelque chose qui cloche" << std::endl;
+    int i = 0;
     while (!lveWindow.shouldClose())
     {
 
@@ -122,6 +125,8 @@ namespace lve
       auto newTime = std::chrono::high_resolution_clock::now();
       float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
       currentTime = newTime;
+      //display frame time and fps
+      
       cameraController.moveInPlaneXZ(lveWindow.getGLFWwindow(), frameTime, viewerObject);
       camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
@@ -130,8 +135,11 @@ namespace lve
       camera.setPerspectiveProjection(glm::radians(80.f), aspect, 0.1f, 100.f);
       if (auto commandBuffer = lveRenderer.beginFrame())
       {
+        
         int frameIndex = lveRenderer.getFrameIndex();
-
+        i = i + 1;
+        std::cout << "Frame time: " << frameTime << " seconds" << std::endl;
+        std::cout << "frame per second :" << 1.f/frameTime << std::endl;
         FrameInfo frameInfo{
             frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
 
@@ -154,7 +162,7 @@ namespace lve
 
         lveRenderer.endSwapChainRenderPass(commandBuffer);
         lveRenderer.endFrame();
-        
+        lveRenderer.presentFrame();
       }
     }
 

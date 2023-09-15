@@ -34,6 +34,7 @@ public:
   VkCommandBuffer beginFrame();
   void endFrame();
   void presentFrame();
+  void renderPostProssessingEffects(FrameInfo frameInfo);
   void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
   void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
