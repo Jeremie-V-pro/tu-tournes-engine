@@ -15,9 +15,10 @@ namespace lve
 
     createImageBarrier();
 
+    createSyncObjects();
   }
 
-  LvePostProcessingManager::LvePostProcessingManager(VkExtent2D windowExtent, LvePostProcessingManager &postProcessingManager) : lveDevice{postProcessingManager.lveDevice}, windowExtent{windowExtent}, postProcessings{postProcessingManager.postProcessings}, computeInFlightFences{postProcessingManager.computeInFlightFences}, computeFinishedSemaphores{postProcessingManager.computeFinishedSemaphores}
+  LvePostProcessingManager::LvePostProcessingManager(VkExtent2D windowExtent, LvePostProcessingManager &postProcessingManager) : lveDevice{postProcessingManager.lveDevice}, windowExtent{windowExtent}, postProcessings{postProcessingManager.postProcessings}, computeFinishedSemaphores{postProcessingManager.computeFinishedSemaphores}
   {
     createTexture();
 
@@ -90,41 +91,55 @@ namespace lve
     postProcessings.clear();
   }
 
-  void LvePostProcessingManager::drawPostProcessings(FrameInfo frameInfo, VkImage swapChainImage, VkSemaphore renderFinishedSemaphore)
+  void LvePostProcessingManager::drawPostProcessings(FrameInfo frameInfo, VkImage swapChainImage, VkSemaphore renderFinishedSemaphore, VkFence fence)
   {
-    copySwapChainImageToTexture(frameInfo, swapChainImage, textures[frameInfo.frameIndex]->getTextureImage());
+    copySwapChainImageToTexture(frameInfo, swapChainImage, textures[frameInfo.frameIndex * LveSwapChain::MAX_FRAMES_IN_FLIGHT]->getTextureImage());
     for (int i = 0; i < postProcessings.size(); i++)
     {
-      vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imagesBarrier[frameInfo.frameIndex + (i % 2)]);
-      postProcessings[i]->executeCpS(frameInfo, texturesDescriptorSets[frameInfo.frameIndex].first);
+      vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imagesBarriers[frameInfo.frameIndex  * LveSwapChain::MAX_FRAMES_IN_FLIGHT+ (i % LveSwapChain::MAX_FRAMES_IN_FLIGHT)]);
+      postProcessings[i]->executeCpS(frameInfo, texturesDescriptorSets[frameInfo.frameIndex].first, windowExtent);
       std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
     }
-    copyTextureToSwapChainImage(frameInfo , swapChainImage, textures[frameInfo.frameIndex]->getTextureImage());
+    std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
+    copyTextureToSwapChainImage(frameInfo, swapChainImage, textures[frameInfo.frameIndex * LveSwapChain::MAX_FRAMES_IN_FLIGHT + 1]->getTextureImage());
+
+    if (vkEndCommandBuffer(frameInfo.computeCommandBuffer) != VK_SUCCESS)
+    {
+      throw std::runtime_error("failed to record command buffer!");
+    }
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-
-    if (vkQueueSubmit(lveDevice.graphicsQueue(), 1, &submitInfo, computeInFlightFences[currentFrame]) != VK_SUCCESS) {
-    throw std::runtime_error("failed to submit compute command buffer!");
-};
+    VkSemaphore signalSemaphores[] = {computeFinishedSemaphores[frameInfo.frameIndex]};
+    VkSemaphore waitSemaphores[] = {renderFinishedSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &frameInfo.computeCommandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    
+     if (vkQueueSubmit(lveDevice.graphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS)
+    {
+      throw std::runtime_error("failed to submit compute command buffer!");
+    }
   }
 
   void LvePostProcessingManager::createSyncObjects()
   {
-    computeInFlightFences->resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
-    computeFinishedSemaphores->resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
+    computeFinishedSemaphores.resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
 
     for (size_t i = 0; i < LveSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
     {
 
-      if (vkCreateSemaphore(lveDevice.device(), &semaphoreInfo, nullptr, &(*computeFinishedSemaphores)[i]) != VK_SUCCESS ||
-          vkCreateFence(lveDevice.device(), &fenceInfo, nullptr, &(*computeInFlightFences)[i]) != VK_SUCCESS)
+      if (vkCreateSemaphore(lveDevice.device(), &semaphoreInfo, nullptr, &computeFinishedSemaphores[i]) != VK_SUCCESS)
       {
         throw std::runtime_error("failed to create compute synchronization objects for a frame!");
       }
@@ -133,7 +148,7 @@ namespace lve
 
   void LvePostProcessingManager::createImageBarrier()
   {
-    imagesBarrier.resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
+    imagesBarriers.clear();
     // loop in textures
     for (auto &texture : textures)
     {
@@ -142,34 +157,35 @@ namespace lve
       imagesBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
       imagesBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
       imagesBarrier.image = texture->getTextureImage();
-      // imagesBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+       imagesBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
       imagesBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
-      imagesBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;;
-      imagesBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-      imagesBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      imagesBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+      imagesBarriers.push_back(imagesBarrier);
     }
   }
 
   void LvePostProcessingManager::copySwapChainImageToTexture(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage)
   {
     VkImageMemoryBarrier transferDestImageBarrier{};
-    transferDestImageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
-    transferDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    transferDestImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    transferDestImageBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT ;
+    transferDestImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     transferDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     transferDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     transferDestImageBarrier.image = postprocessingImage;
-    transferDestImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferDestImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkImageMemoryBarrier transferSwapChainImageBarrier{};
+    transferSwapChainImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     transferSwapChainImageBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
     transferSwapChainImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     transferSwapChainImageBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     transferSwapChainImageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     transferSwapChainImageBarrier.image = swapChainImage;
-    transferSwapChainImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferSwapChainImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferDestImageBarrier);
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferSwapChainImageBarrier);
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferDestImageBarrier);
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferSwapChainImageBarrier);
 
     VkImageCopy imageCopyRegion{};
     imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -182,40 +198,46 @@ namespace lve
 
     // Issue the copy command
     vkCmdCopyImage(
-        frameInfo.commandBuffer,
+        frameInfo.computeCommandBuffer,
         swapChainImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         postprocessingImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &imageCopyRegion);
 
     VkImageMemoryBarrier transferBackDestImageBarrier{};
-    transferDestImageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    transferDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-    transferDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    transferDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    transferDestImageBarrier.image = postprocessingImage;
-    transferDestImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferBackDestImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    transferBackDestImageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transferBackDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    transferBackDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transferBackDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transferBackDestImageBarrier.image = postprocessingImage;
+    transferBackDestImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferBackDestImageBarrier);
   }
 
-  void LvePostProcessingManager::copyTextureToSwapChainImage(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage) {
+  void LvePostProcessingManager::copyTextureToSwapChainImage(FrameInfo frameInfo, VkImage swapChainImage, VkImage postprocessingImage)
+  {
     VkImageMemoryBarrier transferDestImageBarrier{};
+    transferDestImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     transferDestImageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
-    transferDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    transferDestImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     transferDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     transferDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     transferDestImageBarrier.image = postprocessingImage;
-    transferDestImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferDestImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkImageMemoryBarrier transferSwapChainImageBarrier{};
+    transferSwapChainImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     transferSwapChainImageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    transferSwapChainImageBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    transferSwapChainImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     transferSwapChainImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     transferSwapChainImageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     transferSwapChainImageBarrier.image = swapChainImage;
-    transferSwapChainImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferSwapChainImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferDestImageBarrier);
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferSwapChainImageBarrier);
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferDestImageBarrier);
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferSwapChainImageBarrier);
 
     VkImageCopy imageCopyRegion{};
     imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -228,30 +250,32 @@ namespace lve
 
     // Issue the copy command
     vkCmdCopyImage(
-        frameInfo.commandBuffer,
-        swapChainImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        postprocessingImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        frameInfo.computeCommandBuffer,
+        postprocessingImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        swapChainImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &imageCopyRegion);
 
     VkImageMemoryBarrier transferBackDestImageBarrier{};
-    transferDestImageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    transferDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-    transferDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    transferDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    transferDestImageBarrier.image = postprocessingImage;
-    transferDestImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    transferBackDestImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    transferBackDestImageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    transferBackDestImageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    transferBackDestImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    transferBackDestImageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transferBackDestImageBarrier.image = postprocessingImage;
+    transferBackDestImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkImageMemoryBarrier transferBackSwapchainImageBarrier{};
-    transferSwapChainImageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    transferSwapChainImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    transferSwapChainImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    transferSwapChainImageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    transferSwapChainImageBarrier.image = swapChainImage;
-    transferSwapChainImageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-  
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferDestImageBarrier);
-    vkCmdPipelineBarrier(frameInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferSwapChainImageBarrier);
+    transferBackSwapchainImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    transferBackSwapchainImageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transferBackSwapchainImageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    transferBackSwapchainImageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transferBackSwapchainImageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    transferBackSwapchainImageBarrier.image = swapChainImage;
+    transferBackSwapchainImageBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferBackDestImageBarrier);
+    vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &transferBackSwapchainImageBarrier);
   }
 
 }

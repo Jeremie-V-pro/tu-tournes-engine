@@ -63,13 +63,13 @@ namespace lve
         lveDevice, "shaders/simple_compute_shader.comp.spv", pipelineConfig);
   }
 
-  void SimpleComputeSystem::executeCpS(FrameInfo frameInfo, VkDescriptorSet computeDescriptorSets)
+  void SimpleComputeSystem::executeCpS(FrameInfo frameInfo, VkDescriptorSet computeDescriptorSets, VkExtent2D windowExtent)
   {
-    lveCPipeline->bind(frameInfo.commandBuffer);
+    lveCPipeline->bind(frameInfo.computeCommandBuffer);
     
-    vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &computeDescriptorSets, 0, 0);
+    vkCmdBindDescriptorSets(frameInfo.computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &computeDescriptorSets, 0, 0);
     std::cout << "Dispatching" << std::endl;
-    vkCmdDispatch(frameInfo.commandBuffer, 1280, 720, 1);
+    vkCmdDispatch(frameInfo.computeCommandBuffer, windowExtent.width, windowExtent.height, 1);
     std::cout << "cake" << std::endl;
   }
 } // namespace lve

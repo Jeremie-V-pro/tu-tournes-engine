@@ -31,6 +31,7 @@ struct FrameInfo{
   LveCamera &camera;
   VkDescriptorSet globalDescriptorSet;
   LveGameObject::Map &gameObjects;
+  VkCommandBuffer computeCommandBuffer;
 };
 
 }

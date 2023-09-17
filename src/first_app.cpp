@@ -103,8 +103,10 @@ namespace lve
                                       lveRenderer.getSwapChainRenderPass(),
                                       globalSetLayout->getDescriptorSetLayout()};
 
-    SimpleComputeSystem simpleComputeSystem{lveDevice,
-                                            LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout()};
+    std::shared_ptr<SimpleComputeSystem> simpleComputeSystem = std::make_shared<SimpleComputeSystem>(lveDevice,
+                                            LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout());
+    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
+    
     LveCamera camera{};
     // camera.setViewDirection(glm::vec3(0.f), glm::vec3(0.5, 0.f, 1.f));
     camera.setViewTarget(glm::vec3(-1.f, -2.f, 2.f), glm::vec3(0.f, 0.f, 2.5f));
@@ -115,7 +117,7 @@ namespace lve
 
     auto currentTime = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Ya quelque chose qui cloche" << std::endl;
+    
     int i = 0;
     while (!lveWindow.shouldClose())
     {
@@ -138,10 +140,11 @@ namespace lve
         
         int frameIndex = lveRenderer.getFrameIndex();
         i = i + 1;
+        std::cout << "\033[4A";
         std::cout << "Frame time: " << frameTime << " seconds" << std::endl;
         std::cout << "frame per second :" << 1.f/frameTime << std::endl;
         FrameInfo frameInfo{
-            frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
+            frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects, lveRenderer.getCurrentComputeCommandBuffer()};
 
         // update
         GlobalUbo ubo{};
@@ -162,6 +165,7 @@ namespace lve
 
         lveRenderer.endSwapChainRenderPass(commandBuffer);
         lveRenderer.endFrame();
+        lveRenderer.renderPostProssessingEffects(frameInfo);
         lveRenderer.presentFrame();
       }
     }

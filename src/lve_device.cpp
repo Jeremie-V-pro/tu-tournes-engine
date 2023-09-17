@@ -121,7 +121,7 @@ void LveDevice::pickPhysicalDevice() {
 
   for (const auto &device : devices) {
     if (isDeviceSuitable(device)) {
-      physicalDevice = devices[1];
+      physicalDevice = device;
       break;
     }
   }

@@ -17,18 +17,28 @@ vec3 randomVec3(vec2 seed) {
 
 void main() 
 {
-  vec3 finalpixel = vec3(0.0f);
-
-  for(uint x = gl_WorkGroupID.x -2 ; x <= gl_WorkGroupID.x + 2; x++)
-  {
-    for(uint y = gl_WorkGroupID.y -2 ; y <= gl_WorkGroupID.y + 2; y++)
-    {
-      vec3 pixel = imageLoad(inputImage, ivec2(x, y)).rgb;
-      finalpixel += pixel;
-    }
-  }
-  finalpixel = finalpixel / 125.0f ;
-  // finalpixel = randomVec3(vec2(gl_WorkGroupID.xy));
+  vec3 finalpixel = vec3(1.0f, 0.0f, 0.0f);
+  // float truc = 0.0f;
+  // for(uint x = gl_WorkGroupID.x -5 ; x <= gl_WorkGroupID.x + 5; x++)
+  // {
+  //   for(uint y = gl_WorkGroupID.y -5 ; y <= gl_WorkGroupID.y + 5; y++)
+  //   {
+  //     if(x < 1280 && y < 720)
+  //     {
+  //       vec3 pixel = imageLoad(inputImage, ivec2(x, y)).rgb;
+  //       finalpixel += pixel;
+  //       truc += 1.0f;
+  //     }
+  //     else
+  //     {
+  //       finalpixel += vec3(1.0f, 0.0f, 0.0f);
+  //       break;
+  //     }
+      
+  //   }
+  // }
+  // finalpixel = finalpixel / truc;
+  // // finalpixel = randomVec3(vec2(gl_WorkGroupID.xy));
   imageStore(outputImage, ivec2(gl_WorkGroupID.xy), vec4(finalpixel, 1.0));
 
 }

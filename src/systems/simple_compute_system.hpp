@@ -17,10 +17,7 @@ public:
   SimpleComputeSystem(LveDevice &device, VkDescriptorSetLayout textureSetLayout);
   ~SimpleComputeSystem();
 
-  SimpleComputeSystem(const LveWindow &) = delete;
-  SimpleComputeSystem &operator=(const LveWindow &) = delete;
-
-  void executeCpS(FrameInfo FrameInfo, VkDescriptorSet computeDescriptorSets);
+  void executeCpS(FrameInfo FrameInfo, VkDescriptorSet computeDescriptorSets, VkExtent2D extent) override;
 
 
 private:

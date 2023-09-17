@@ -40,7 +40,7 @@ class LveSwapChain {
   VkResult acquireNextImage(uint32_t *imageIndex);
   VkResult submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
 
-  VkResult presentImage(uint32_t *imageIndex);
+  VkResult presentImage(uint32_t *imageIndex, VkSemaphore waitSemaphore );
 
   VkSemaphore getActualRenderFinishedSemaphores() const {
     return renderFinishedSemaphores[currentFrame];
@@ -48,6 +48,10 @@ class LveSwapChain {
 
   VkImage getActualswapChainImages() const {
     return swapChainImages[currentFrame];
+  }
+
+  VkFence getActualInFlightFences() const {
+    return inFlightFences[currentFrame];
   }
 
 

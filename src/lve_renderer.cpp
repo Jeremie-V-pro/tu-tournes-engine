@@ -80,6 +80,22 @@ namespace lve
     {
       throw std::runtime_error("failed to allocate commande buffers!");
     }
+
+    computeCommandBuffers.resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
+
+    allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = lveDevice.getCommandPool();
+    allocInfo.commandBufferCount = static_cast<uint32_t>(computeCommandBuffers.size());
+
+    if (vkAllocateCommandBuffers(lveDevice.device(), &allocInfo,
+                                 computeCommandBuffers.data()) != VK_SUCCESS)
+    {
+      throw std::runtime_error("failed to allocate commande buffers!");
+    }
+
+
   }
 
   void LveRenderer::freeCommandBuffers()
@@ -88,6 +104,11 @@ namespace lve
                          static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     commandBuffers.clear();
+
+    vkFreeCommandBuffers(lveDevice.device(), lveDevice.getCommandPool(),
+                         static_cast<uint32_t>(computeCommandBuffers.size()),
+                         computeCommandBuffers.data());
+    computeCommandBuffers.clear();
   }
 
   VkCommandBuffer LveRenderer::beginFrame()
@@ -130,7 +151,8 @@ namespace lve
 
   void LveRenderer::presentFrame()
   {
-    auto result = lveSwapChain->presentImage(&currentImageIndex);
+    VkSemaphore postProssessingSemaphore = postProcessingManager->getComputeSemaphore(currentFrameIndex);
+    auto result = lveSwapChain->presentImage(&currentImageIndex, postProssessingSemaphore);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         lveWindow.wasWindowResized())
     {
@@ -185,13 +207,27 @@ namespace lve
     vkCmdEndRenderPass(commandBuffer);
   }
 
-  void LveRenderer::renderPostProssessingEffects(FrameInfo FrameInfo)
+  void LveRenderer::renderPostProssessingEffects(FrameInfo frameInfo)
   {
     VkImage swapchainImage = lveSwapChain->getActualswapChainImages();
     VkSemaphore renderFinishedSemaphore = lveSwapChain->getActualRenderFinishedSemaphores();
+    VkFence fence = lveSwapChain->getActualInFlightFences();
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if (vkBeginCommandBuffer(frameInfo.computeCommandBuffer, &beginInfo) !=
+        VK_SUCCESS)
+    {
+      throw std::runtime_error("failed to begin recording command buffer!");
+    }
 
-    postProcessingManager->drawPostProcessings(FrameInfo, swapchainImage, renderFinishedSemaphore);
+    postProcessingManager->drawPostProcessings(frameInfo, swapchainImage, renderFinishedSemaphore, fence);
 
+    
+  }
+
+  void LveRenderer::addPostProcessingEffect(std::shared_ptr<LveIPostProcessing> postProcessing)
+  {
+    postProcessingManager->addPostProcessing(postProcessing);
   }
 
 } // namespace lve

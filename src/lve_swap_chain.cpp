@@ -102,27 +102,27 @@ VkResult LveSwapChain::submitCommandBuffers(
 
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
-
+  
   VkSemaphore signalSemaphores[] = {(renderFinishedSemaphores)[currentFrame]};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
   
   vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
-  auto result = vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
+  auto result = vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
   if (result != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
   }
   return result;
 }
 
-VkResult LveSwapChain::presentImage(uint32_t *imageIndex){
+VkResult LveSwapChain::presentImage(uint32_t *imageIndex, VkSemaphore waitSemaphore){
 
-  VkSemaphore signalSemaphores[] = {(renderFinishedSemaphores)[currentFrame]};
+  VkSemaphore waitSemaphores[] = {waitSemaphore};
   VkPresentInfoKHR presentInfo = {};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = signalSemaphores;
+  presentInfo.pWaitSemaphores = waitSemaphores;
 
   VkSwapchainKHR swapChains[] = {swapChain};
   presentInfo.swapchainCount = 1;
@@ -159,7 +159,7 @@ void LveSwapChain::createSwapChain() {
   createInfo.imageColorSpace = surfaceFormat.colorSpace;
   createInfo.imageExtent = extent;
   createInfo.imageArrayLayers = 1;
-  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
   QueueFamilyIndices indices = device.findPhysicalQueueFamilies();
   // uint32_t queueFamilyIndices[] = {indices.graphicsFamily, indices.presentFamily};

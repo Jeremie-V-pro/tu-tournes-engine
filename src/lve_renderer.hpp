@@ -26,6 +26,11 @@ public:
     return  commandBuffers[currentFrameIndex];
   }
 
+  VkCommandBuffer getCurrentComputeCommandBuffer() const{
+    assert(isFrameStarted && "Cannot get command buffer when frame not in progress");
+    return  computeCommandBuffers[currentFrameIndex];
+  }
+
   int getFrameIndex() const{
     assert(isFrameStarted && "cannot get frame index when not frame in progress");
     return currentFrameIndex;
@@ -37,6 +42,7 @@ public:
   void renderPostProssessingEffects(FrameInfo frameInfo);
   void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
   void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+  void addPostProcessingEffect(std::shared_ptr<LveIPostProcessing> postProcessing);
 
 private:
 
@@ -49,6 +55,7 @@ private:
   LveDevice& lveDevice;
   std::unique_ptr<LveSwapChain> lveSwapChain;
   std::vector<VkCommandBuffer> commandBuffers;
+  std::vector<VkCommandBuffer> computeCommandBuffers;
 
   std::unique_ptr<LvePostProcessingManager> postProcessingManager;
 
