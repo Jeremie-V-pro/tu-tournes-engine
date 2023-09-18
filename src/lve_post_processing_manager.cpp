@@ -53,7 +53,7 @@ namespace lve
   {
     texturesDescriptorSets.resize(LveSwapChain::MAX_FRAMES_IN_FLIGHT);
     std::cout << "A" << std::endl;
-    for (int i = 0; i < LveSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
+    for (int i = 0; i < LveSwapChain::MAX_FRAMES_IN_FLIGHT*2; i+=2)
     {
 
       VkDescriptorImageInfo imageDescriptorInfo1{};
@@ -77,7 +77,7 @@ namespace lve
           .writeImage(0, &imageDescriptorInfo2)
           .writeImage(1, &imageDescriptorInfo1)
           .build(textureDescriptorSet2);
-      texturesDescriptorSets[i] = std::make_pair(textureDescriptorSet1, textureDescriptorSet2);
+      texturesDescriptorSets[i/2] = std::make_pair(textureDescriptorSet1, textureDescriptorSet2);
     }
   }
 
@@ -93,15 +93,19 @@ namespace lve
 
   void LvePostProcessingManager::drawPostProcessings(FrameInfo frameInfo, VkImage swapChainImage, VkSemaphore renderFinishedSemaphore, VkFence fence)
   {
-    copySwapChainImageToTexture(frameInfo, swapChainImage, textures[frameInfo.frameIndex * LveSwapChain::MAX_FRAMES_IN_FLIGHT]->getTextureImage());
-    for (int i = 0; i < postProcessings.size(); i++)
+    copySwapChainImageToTexture(frameInfo, swapChainImage, textures[frameInfo.frameIndex * 2]->getTextureImage());
+    int i;
+    for (i = 0; i < postProcessings.size(); i++)
     {
-      vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imagesBarriers[frameInfo.frameIndex  * LveSwapChain::MAX_FRAMES_IN_FLIGHT+ (i % LveSwapChain::MAX_FRAMES_IN_FLIGHT)]);
+      vkCmdPipelineBarrier(frameInfo.computeCommandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imagesBarriers[frameInfo.frameIndex  * 2 + (i % 2)]);
       postProcessings[i]->executeCpS(frameInfo, texturesDescriptorSets[frameInfo.frameIndex].first, windowExtent);
       std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
     }
-    std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
-    copyTextureToSwapChainImage(frameInfo, swapChainImage, textures[frameInfo.frameIndex * LveSwapChain::MAX_FRAMES_IN_FLIGHT + 1]->getTextureImage());
+    if (i % 2){
+      std::swap(texturesDescriptorSets[frameInfo.frameIndex].first, texturesDescriptorSets[frameInfo.frameIndex].second);
+    }
+    
+    copyTextureToSwapChainImage(frameInfo, swapChainImage, textures[frameInfo.frameIndex * 2 + i % 2]->getTextureImage());
 
     if (vkEndCommandBuffer(frameInfo.computeCommandBuffer) != VK_SUCCESS)
     {

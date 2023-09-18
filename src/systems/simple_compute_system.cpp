@@ -68,8 +68,8 @@ namespace lve
     lveCPipeline->bind(frameInfo.computeCommandBuffer);
     
     vkCmdBindDescriptorSets(frameInfo.computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &computeDescriptorSets, 0, 0);
-    std::cout << "Dispatching" << std::endl;
+
     vkCmdDispatch(frameInfo.computeCommandBuffer, windowExtent.width, windowExtent.height, 1);
-    std::cout << "cake" << std::endl;
+
   }
 } // namespace lve

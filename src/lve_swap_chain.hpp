@@ -46,8 +46,8 @@ class LveSwapChain {
     return renderFinishedSemaphores[currentFrame];
   }
 
-  VkImage getActualswapChainImages() const {
-    return swapChainImages[currentFrame];
+  VkImage getActualswapChainImages(uint32_t imageIndex) const {
+    return swapChainImages[imageIndex];
   }
 
   VkFence getActualInFlightFences() const {

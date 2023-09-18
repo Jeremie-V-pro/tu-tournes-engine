@@ -106,6 +106,8 @@ namespace lve
     std::shared_ptr<SimpleComputeSystem> simpleComputeSystem = std::make_shared<SimpleComputeSystem>(lveDevice,
                                             LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout());
     lveRenderer.addPostProcessingEffect(simpleComputeSystem);
+    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
+    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
     
     LveCamera camera{};
     // camera.setViewDirection(glm::vec3(0.f), glm::vec3(0.5, 0.f, 1.f));
@@ -140,7 +142,7 @@ namespace lve
         
         int frameIndex = lveRenderer.getFrameIndex();
         i = i + 1;
-        std::cout << "\033[4A";
+        std::cout << "\033[3A";
         std::cout << "Frame time: " << frameTime << " seconds" << std::endl;
         std::cout << "frame per second :" << 1.f/frameTime << std::endl;
         FrameInfo frameInfo{

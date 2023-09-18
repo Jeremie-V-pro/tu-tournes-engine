@@ -145,11 +145,11 @@ void LveSwapChain::createSwapChain() {
   VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
   uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-  if (swapChainSupport.capabilities.maxImageCount > 0 &&
-      imageCount > swapChainSupport.capabilities.maxImageCount) {
-    imageCount = swapChainSupport.capabilities.maxImageCount;
-  }
-
+  // if (swapChainSupport.capabilities.maxImageCount > 0 &&
+  //     imageCount > swapChainSupport.capabilities.maxImageCount) {
+  //   imageCount = swapChainSupport.capabilities.maxImageCount;
+  // }
+  imageCount = 3;
   VkSwapchainCreateInfoKHR createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
   createInfo.surface = device.surface();

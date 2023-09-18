@@ -209,7 +209,8 @@ namespace lve
 
   void LveRenderer::renderPostProssessingEffects(FrameInfo frameInfo)
   {
-    VkImage swapchainImage = lveSwapChain->getActualswapChainImages();
+    std::cout << currentFrameIndex << std::endl;
+    VkImage swapchainImage = lveSwapChain->getActualswapChainImages(currentImageIndex);
     VkSemaphore renderFinishedSemaphore = lveSwapChain->getActualRenderFinishedSemaphores();
     VkFence fence = lveSwapChain->getActualInFlightFences();
     VkCommandBufferBeginInfo beginInfo{};

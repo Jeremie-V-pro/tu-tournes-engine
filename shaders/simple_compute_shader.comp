@@ -6,40 +6,46 @@ layout (binding = 1, rgba8) uniform writeonly image2D outputImage;
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 
-vec3 randomVec3(vec2 seed) {
-    float rand1 = fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
-    float rand2 = fract(sin(dot(seed, vec2(93.989, 67.345))) * 24634.634);
-    float rand3 = fract(sin(dot(seed, vec2(43.332, 93.532))) * 56456.423);
-
-    return vec3(rand1, rand2, rand3);
-}
-
+const int kernelSize = 5; // Taille du noyau de flou gaussien
+const float sigma = 2.0;  // Écart-type du noyau de flou gaussien
 
 void main() 
 {
-  vec3 finalpixel = vec3(1.0f, 0.0f, 0.0f);
-  // float truc = 0.0f;
-  // for(uint x = gl_WorkGroupID.x -5 ; x <= gl_WorkGroupID.x + 5; x++)
-  // {
-  //   for(uint y = gl_WorkGroupID.y -5 ; y <= gl_WorkGroupID.y + 5; y++)
-  //   {
-  //     if(x < 1280 && y < 720)
-  //     {
-  //       vec3 pixel = imageLoad(inputImage, ivec2(x, y)).rgb;
-  //       finalpixel += pixel;
-  //       truc += 1.0f;
-  //     }
-  //     else
-  //     {
-  //       finalpixel += vec3(1.0f, 0.0f, 0.0f);
-  //       break;
-  //     }
-      
-  //   }
-  // }
-  // finalpixel = finalpixel / truc;
-  // // finalpixel = randomVec3(vec2(gl_WorkGroupID.xy));
-  imageStore(outputImage, ivec2(gl_WorkGroupID.xy), vec4(finalpixel, 1.0));
+  ivec2 texel = ivec2(gl_WorkGroupID.xy);
+    vec3 result = vec3(0.0);
+
+    // Noyau de flou gaussien
+    float kernel[kernelSize];
+    for (int i = 0; i < kernelSize; i++) 
+    {
+        float x = float(i - kernelSize / 2);
+        kernel[i] = exp(-0.5 * (x * x) / (sigma * sigma));
+    }
+
+    // Normalisation du noyau
+    float kernelSum = 0.0;
+    for (int i = 0; i < kernelSize; i++) 
+    {
+        kernelSum += kernel[i];
+    }
+    for (int i = 0; i < kernelSize; i++) 
+    {
+        kernel[i] /= kernelSum;
+    }
+
+    // Appliquer le flou gaussien
+    for (int i = 0; i < kernelSize; i++) 
+    {
+        for (int j = 0; j < kernelSize; j++) 
+        {
+            ivec2 offset = ivec2(i - kernelSize / 2, j - kernelSize / 2);
+            vec3 sampl = imageLoad(inputImage, texel + offset).rgb;
+            result += sampl * kernel[i] * kernel[j];
+        }
+    }
+
+    // Écrire le résultat dans l'image de sortie
+    imageStore(outputImage, texel, vec4(result, 1.0));
 
 }
 
