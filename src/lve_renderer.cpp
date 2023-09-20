@@ -151,7 +151,8 @@ namespace lve
 
   void LveRenderer::presentFrame()
   {
-    VkSemaphore postProssessingSemaphore = postProcessingManager->getComputeSemaphore(currentFrameIndex);
+    // VkSemaphore postProssessingSemaphore = postProcessingManager->getComputeSemaphore(currentFrameIndex);
+    VkSemaphore postProssessingSemaphore = lveSwapChain->getActualRenderFinishedSemaphores();
     auto result = lveSwapChain->presentImage(&currentImageIndex, postProssessingSemaphore);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         lveWindow.wasWindowResized())

@@ -7,7 +7,9 @@
 #include "lve_swap_chain.hpp"
 #include "systems/simple_render_system.hpp"
 #include "systems/point_light_system.hpp"
-#include "systems/simple_compute_system.hpp"
+#include "systems/simple_compute_systemR.hpp"
+#include "systems/simple_compute_systemG.hpp"
+#include "systems/simple_compute_systemB.hpp"
 #include "lve_buffer.hpp"
 
 #include <glm/ext/matrix_transform.hpp>
@@ -103,11 +105,18 @@ namespace lve
                                       lveRenderer.getSwapChainRenderPass(),
                                       globalSetLayout->getDescriptorSetLayout()};
 
-    std::shared_ptr<SimpleComputeSystem> simpleComputeSystem = std::make_shared<SimpleComputeSystem>(lveDevice,
+    std::shared_ptr<SimpleComputeSystemR> simpleComputeSystemR = std::make_shared<SimpleComputeSystemR>(lveDevice,
                                             LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout());
-    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
-    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
-    lveRenderer.addPostProcessingEffect(simpleComputeSystem);
+
+    std::shared_ptr<SimpleComputeSystemG> simpleComputeSystemG = std::make_shared<SimpleComputeSystemG>(lveDevice,
+                                            LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout());
+
+    std::shared_ptr<SimpleComputeSystemB> simpleComputeSystemB = std::make_shared<SimpleComputeSystemB>(lveDevice,
+                                            LveDescriptorSetLayout::defaultPostProcessingTextureSetLayout->getDescriptorSetLayout());
+
+    lveRenderer.addPostProcessingEffect(simpleComputeSystemR);
+    lveRenderer.addPostProcessingEffect(simpleComputeSystemG);
+    lveRenderer.addPostProcessingEffect(simpleComputeSystemB);
     
     LveCamera camera{};
     // camera.setViewDirection(glm::vec3(0.f), glm::vec3(0.5, 0.f, 1.f));

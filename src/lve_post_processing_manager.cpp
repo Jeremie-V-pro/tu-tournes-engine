@@ -18,7 +18,11 @@ namespace lve
     createSyncObjects();
   }
 
-  LvePostProcessingManager::LvePostProcessingManager(VkExtent2D windowExtent, LvePostProcessingManager &postProcessingManager) : lveDevice{postProcessingManager.lveDevice}, windowExtent{windowExtent}, postProcessings{postProcessingManager.postProcessings}, computeFinishedSemaphores{postProcessingManager.computeFinishedSemaphores}
+  LvePostProcessingManager::LvePostProcessingManager(VkExtent2D windowExtent, LvePostProcessingManager &postProcessingManager) : 
+    lveDevice{postProcessingManager.lveDevice}, 
+    windowExtent{windowExtent}, 
+    postProcessings{postProcessingManager.postProcessings}, 
+    computeFinishedSemaphores{postProcessingManager.computeFinishedSemaphores}
   {
     createTexture();
 
