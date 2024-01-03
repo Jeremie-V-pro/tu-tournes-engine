@@ -69,6 +69,8 @@ if (NOT IMG_PATH)
   set(IMG_PATH external/stb_image)
 endif()
 
+find_package( OpenCV REQUIRED )
+
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -111,7 +113,7 @@ elseif (UNIX)
       ${TINYOBJ_PATH}
       ${IMG_PATH}
     )
-    target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES} ${OpenCV_LIBS})
 endif()
 
 

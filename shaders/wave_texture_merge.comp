@@ -1,0 +1,56 @@
+#version 450
+const float PI = 3.1415926;
+const float GRAVITY_ACCELERATION = 9.81;
+const float DEPTH = 500;
+// Structs /////////////////////////////
+
+// Input DATA //////////////////////////
+
+layout(set = 0, binding = 0, rg32f) uniform readonly image2D Dx_Dz;
+layout(set = 0, binding = 1, rg32f) uniform readonly image2D Dy_Dxz;
+layout(set = 0, binding = 2, rg32f) uniform readonly image2D Dyx_Dyz;
+layout(set = 0, binding = 3, rg32f) uniform readonly image2D Dxx_Dzz;
+
+layout(push_constant) uniform Push {
+    vec2 resolution;
+    float Lambda;
+    float DeltaTime;
+}
+push;
+
+// Output DATA //////////////////////////
+
+layout(set = 0, binding = 4, rgba32f) uniform writeonly image2D Displacement;
+layout(set = 0, binding = 5, rgba32f) uniform writeonly image2D Derivatives;
+layout(set = 0, binding = 6, rgba32f) uniform image2D Turbulence;
+
+// Function /////////////////////////////
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+void main() {
+    if (gl_GlobalInvocationID.x >= push.resolution.x || gl_GlobalInvocationID.y >= push.resolution.y) return;
+    vec2 DxDz = imageLoad(Dx_Dz, ivec2(gl_GlobalInvocationID.xy)).rg;
+    vec2 DyDxz = imageLoad(Dy_Dxz, ivec2(gl_GlobalInvocationID.xy)).rg;
+    vec2 DyxDyz = imageLoad(Dyx_Dyz, ivec2(gl_GlobalInvocationID.xy)).rg;
+    vec2 DxxDzz = imageLoad(Dxx_Dzz, ivec2(gl_GlobalInvocationID.xy)).rg;
+
+    float Turb = imageLoad(Turbulence, ivec2(gl_GlobalInvocationID.xy)).r;
+
+    imageStore(Displacement, ivec2(gl_GlobalInvocationID.xy),
+               vec4(push.Lambda * DxDz.x, DyDxz.x, push.Lambda * DxDz.y, 0));
+    imageStore(Derivatives, ivec2(gl_GlobalInvocationID.xy), vec4(DyxDyz, DxxDzz * push.Lambda));
+    float jacobian =
+        (1 + push.Lambda * DxxDzz.x) * (1 + push.Lambda * DxxDzz.y) - push.Lambda * push.Lambda * DyDxz.y * DyDxz.y;
+    // Turbulence[id.xy] = Turbulence[id.xy].r + DeltaTime * 0.5 / max(jacobian, 0.5);
+    Turb = Turb + push.DeltaTime * 0.5 / max(jacobian, 0.5);
+    Turb = min(jacobian, Turb);
+    imageStore(Turbulence, ivec2(gl_GlobalInvocationID.xy), vec4(Turb, Turb, Turb, Turb));
+
+    // vec2 h0K = imageLoad(spectrum, ivec2(gl_GlobalInvocationID.xy)).rg;
+    // //vec2 h0MinusK = H0K[uint2((Size - id.x) % Size, (Size - id.y) % Size)];
+    // vec2 h0MinusK = imageLoad(spectrum, ivec2((SUbo.Size - gl_GlobalInvocationID.x) % SUbo.Size, (SUbo.Size -
+    // gl_GlobalInvocationID.y) % SUbo.Size)).rg;
+
+    // // H0[id.xy] = vec4(h0K.x, h0K.y, h0MinusK.x, -h0MinusK.y);
+    // imageStore(spectrumConjugate, ivec2(gl_GlobalInvocationID.xy), vec4(h0K.x, h0K.y, h0MinusK.x, -h0MinusK.y));
+}

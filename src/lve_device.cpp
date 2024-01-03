@@ -137,16 +137,19 @@ namespace lve
     std::cout << "Device count: " << deviceCount << std::endl;
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
+    int i = 0;
     for (const auto &device : devices)
     {
       if (isDeviceSuitable(device))
       {
-        physicalDevice = device;
-        break;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        std::cout << i++ << " : " << "physical device: " << properties.deviceName << std::endl;
       }
     }
-
+    //get user input for physical device
+    std::cout << "Enter the number of the physical device you want to use: ";
+    std::cin >> i;
+    physicalDevice = devices[i];
     if (physicalDevice == VK_NULL_HANDLE)
     {
       throw std::runtime_error("failed to find a suitable GPU!");

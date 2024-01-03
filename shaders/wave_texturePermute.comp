@@ -1,0 +1,29 @@
+#version 450
+// Structs /////////////////////////////
+
+// Input DATA //////////////////////////
+
+layout(set = 0, binding = 0, rg32f) uniform image2D Buffer0;
+
+layout(push_constant) uniform Push {
+    vec2 resolution;
+    uint Size;
+}
+push;
+
+// Function /////////////////////////////
+
+vec2 ComplexMult(in vec2 a, in vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
+
+/////// !! ////////////////////////////////////
+/////// Taille des invocation à revoir ////////
+///////////////////////////////////////////////
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+void main() {
+    if (gl_GlobalInvocationID.x >= push.resolution.x || gl_GlobalInvocationID.y >= push.resolution.y) return;
+
+    vec2 data = imageLoad(Buffer0, ivec2(gl_GlobalInvocationID.xy)).rg;
+    imageStore(Buffer0, ivec2(gl_GlobalInvocationID.xy),
+               vec4(data * (1.0 - 2.0 * ((gl_GlobalInvocationID.x + gl_GlobalInvocationID.y) % 2)), 0, 0));
+}

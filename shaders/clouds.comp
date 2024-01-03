@@ -1,0 +1,443 @@
+#version 450
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+
+struct PointLight {
+    vec4 position;  // ignore w
+    vec4 color;     // w is intensity
+};
+
+layout(set = 0, binding = 0) uniform GlobalUbo {
+    mat4 projection;
+    mat4 view;
+    mat4 invView;
+    vec4 sunDirection;
+    vec4 ambientLightColor;  // w is intensity
+    PointLight pointLights[10];
+    int numLights;
+}
+ubo;
+
+layout(set = 1, binding = 0, rgba8) uniform readonly image2D inputImage;
+layout(set = 1, binding = 1, rgba8) uniform writeonly image2D outputImage;
+layout(set = 2, binding = 0) uniform sampler2D depthImage;
+
+layout(push_constant) uniform Push { vec2 resolution; }
+push;
+
+// Texturing and noise
+
+// Hashing function
+// Returns a random number in [-1,1]
+// p : Vector in space
+float Hash(in vec3 p) {
+    p = fract(p * 0.3199 + 0.152);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+/////////////////////////////////////////////////////
+// Procedural value noise with cubic interpolation
+// x : Point
+float Noise(in vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+
+    f = f * f * (3.0 - 2.0 * f);
+
+    return mix(mix(mix(Hash(i + vec3(0, 0, 0)), Hash(i + vec3(1, 0, 0)), f.x),
+                   mix(Hash(i + vec3(0, 1, 0)), Hash(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(Hash(i + vec3(0, 0, 1)), Hash(i + vec3(1, 0, 1)), f.x),
+                   mix(Hash(i + vec3(0, 1, 1)), Hash(i + vec3(1, 1, 1)), f.x), f.y),
+               f.z);
+}
+
+vec3 Noise3D(in vec3 p) {
+    return vec3(Noise(p + (vec3(40.0, 132.0, 3.0))), Noise(p + (vec3(49.0, 2.0, 289.0))),
+                Noise(p + (vec3(110.0, 28.0, 40.0))));
+}
+
+// Cosine direction
+// seed : Random seed
+//    n : Normal
+vec3 Cosine(float seed, vec3 n) {
+    float u = Hash(78.233 + vec3(seed));
+    float v = Hash(10.873 + vec3(seed));
+
+    float a = 6.2831853 * v;
+    u = 2.0 * u - 1.0;
+    return normalize(n + vec3(sqrt(1.0 - u * u) * vec2(cos(a), sin(a)), u));
+}
+
+// Compute the distance to the Voronoi boundary
+// x : Point
+// Return (closest distance, second closest, cell id)
+vec3 Voronoi(in vec3 x) {
+    vec3 p = floor(x);
+    vec3 f = fract(x);
+
+    float id = 0.0;
+    vec2 res = vec2(100.0);
+    for (int k = -1; k <= 1; k++)
+        for (int j = -1; j <= 1; j++)
+            for (int i = -1; i <= 1; i++) {
+                vec3 b = vec3(float(i), float(j), float(k));
+                vec3 r = vec3(b) - f + Hash(p + b);
+                float d = dot(r, r);
+
+                if (d < res.x) {
+                    id = dot(p + b, vec3(1.0, 57.0, 113.0));
+                    res = vec2(d, res.x);
+                } else if (d < res.y) {
+                    res.y = d;
+                }
+            }
+
+    return vec3(sqrt(res), abs(id));
+}
+
+// Turbulance, mouvement brownien fractionnaire
+float fbm(vec3 p, float a, float l, int o) {
+    float h = 0.;
+    for (int i = 0; i < o; i++) {
+        h += a * Noise(p / l);
+        a *= 0.5;
+        l *= 0.5;
+    }
+    return h;
+}
+
+// Camera -----------------------------------------------------------------------
+
+// Rotation matrix around z axis
+// a : Angle
+mat3 Rz(float a) {
+    float sa = sin(a);
+    float ca = cos(a);
+    return mat3(ca, sa, 0.0, -sa, ca, 0.0, 0.0, 0.0, 1.0);
+}
+
+// Compute the ray
+//      m : Mouse position
+//      p : Pixel
+// ro, rd : Ray origin and direction
+void Ray(out vec3 ro, out vec3 rd, in mat4 viewMatrix, in mat4 projectionMatrix) {
+    vec2 pxNDS = vec2((2.0 * gl_GlobalInvocationID.x / push.resolution.x) - 1.0,
+                      (2.0 * gl_GlobalInvocationID.y / push.resolution.y) - 1);
+    vec3 pointNDS = vec3(pxNDS, .1);
+    vec4 pointNDSH = vec4(pointNDS, 1.0);
+    // get the inverse of the projection matrix
+    mat4 invProj = inverse(projectionMatrix);
+    vec4 dirEye = invProj * pointNDSH;
+    ro = vec3(dirEye.xyz);
+    dirEye.w = 0.;
+    vec3 dirWorld = (ubo.invView * dirEye).xyz;
+    rd = normalize(dirWorld);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+const int Steps = 200;       // Number of steps
+const float Epsilon = 0.01;  // Marching epsilon
+
+// Operators
+
+// Union
+// a,b : field function of left and right sub-trees
+float Union(float a, float b) { return min(a, b); }
+
+// Intersection
+// a,b : field function of left and right sub-trees
+float Intersection(float a, float b) { return max(a, b); }
+
+// Negation
+// a,b : field function of left and right sub-trees
+
+float Negation(float a, float b) { return max(a, -b); }
+
+// Primitives
+
+// Sphere
+// p : point
+// c : center of skeleton
+// r : radius
+float sphere(vec3 p, vec3 c, float r) { return length(p - c) - r; }
+
+// Demi-plan
+// p : point
+// n : Normal of plane
+// o : Point on plane
+float demiplan(vec3 p, vec3 n, vec3 o) { return dot((p - o), n); }
+
+// Boite
+// p : point
+// a,z : extremités opposées
+
+float box(vec3 p, vec3 a, vec3 z) {
+    vec3 b = vec3(a.x, z.y, a.z);
+    vec3 ab = normalize(b - a);
+    float i = max(demiplan(p, ab, b), demiplan(p, -ab, a));
+    vec3 y = vec3(a.x, z.y, z.z);
+    vec3 zy = normalize(y - z);
+    float j = max(demiplan(p, zy, y), demiplan(p, -zy, z));
+    vec3 by = normalize(y - b);
+    float k = max(demiplan(p, by, y), demiplan(p, -by, b));
+    return max(i, max(k, j));
+}
+
+// scale
+// p : point
+// scale : vecteur de transformation
+// o : origine
+vec3 scale(vec3 p, vec3 scale, vec3 o) { return (p - o) / scale + o; }
+
+// translation
+// p : point
+// trans : vecteur de translation
+vec3 translation(vec3 p, vec3 trans) { return p - trans; }
+
+///////////////////////////////////////////////////////
+vec3 worldpos = ubo.invView[3].xyz;
+// Potential field of the object
+// p : point
+float object(vec3 p) {
+    float f = 0.6;  // fréquence
+    float i = 3.0;  // intensité
+    p = p + Noise3D(p * f) / i;
+    // float sq = box(p, vec3(30.0, 0.0, 10.0) - worldpos, vec3(25.0, -5.0, 15.0));
+    float v2 = sphere(p, vec3(-10.0, -4.0, -10.0) - worldpos.xzy, 4.0);
+    float v3 = sphere(p, vec3(-10.0, 0.0, -10.0) - worldpos.xzy, 5.0);
+    float v1 = sphere(p, vec3(-10.0, 4.0, -10.0) - worldpos.xzy, 4.0);
+    float obj = Union(v2, v3);
+    obj = Union(obj, v1);
+    // obj = Union(obj, sq);
+    return obj;
+}
+
+// Analysis of the scalar field
+
+// Calculate object normal
+// p : point
+vec3 ObjectNormal(vec3 p) {
+    const float eps = 0.001;
+    vec3 n;
+    float v = object(p);
+    n.x = object(vec3(p.x + eps, p.y, p.z)) - v;
+    n.y = object(vec3(p.x, p.y + eps, p.z)) - v;
+    n.z = object(vec3(p.x, p.y, p.z + eps)) - v;
+    return normalize(n);
+}
+
+float GetPixelDistance() {
+    vec2 texCoord = vec2(gl_GlobalInvocationID.x / push.resolution.x, gl_GlobalInvocationID.y / push.resolution.y);
+    float pixelDistance = texture(depthImage, texCoord).r;
+    float z_n = 2.0 * pixelDistance - 1.0;                                    // convert range from 0 to 1 to -1 to 1
+    pixelDistance = 2.0 * 0.1 * 100.0 / (100.0 + 0.1 - z_n * (100.0 - 0.1));  // convert from NDC to world space
+    return pixelDistance;
+}
+
+// Trace ray using ray marching
+// o : ray origin
+// u : ray direction
+// e : Maximum distance
+// h : hit
+// s : Number of steps
+float SphereTrace(vec3 o, vec3 u, float e, out bool h, out int s) {
+    h = false;
+
+    // Start at the origin
+    float t = 0.0;
+    float pixelDistance = GetPixelDistance();
+
+    for (int i = 0; i < Steps; i++) {
+        s = i;
+        vec3 p = o + t * u;
+        float v = object(p);
+        // Hit object
+        if (pixelDistance < t) {
+            break;
+        }
+        if (v < 0.0) {
+            h = true;
+            break;
+        }
+        // Move along ray
+        t += max(Epsilon, v);
+        // Escape marched too far away
+        if (t > e) {
+            break;
+        }
+    }
+    return t;
+}
+
+float SphereTrace2(vec3 o, vec3 u, float e, out bool h, out int s) {
+    h = true;
+
+    // Start at the origin
+    float t = 0.0;
+
+    for (int i = 0; i < Steps; i++) {
+        s = i;
+        vec3 p = o + t * u;
+        float v = object(p);
+        // sortie object
+        if (v > 0.0) {
+            h = false;
+            break;
+        }
+        // Move along ray
+        t += max(Epsilon, v);
+        // Escape marched too far away
+        if (t > e) {
+            break;
+        }
+    }
+    return t;
+}
+
+// Lighting
+
+// Ambient occlusion
+// p : Point
+// n : Normal
+// r : Radius for ambient occlusion
+// a : Number of smaples
+float AmbientOcclusion(vec3 p, vec3 n, float r, int a) {
+    if (a == 0) {
+        return 1.0;
+    }
+
+    float ao = 0.0;
+
+    for (int i = 0; i < a; i++) {
+        vec3 d = Cosine(581.123 * float(i), n);
+
+        int s;
+        bool h;
+        float t = SphereTrace(p, d, r, h, s);
+        if (!h) {
+            ao += 1.0;
+        }
+    }
+
+    ao /= float(a);
+    return ao;
+}
+
+// Background color
+// d : Ray direction
+vec3 background(vec3 d) { return mix(vec3(0.45, 0.55, 0.99), vec3(0.65, 0.69, 0.99), d.z * 0.5 + 0.5); }
+
+// Shadowing
+// p : Point
+// n : Normal
+// l : Light direction
+float Shadow(vec3 p, vec3 n, vec3 l) {
+    bool h;
+    int s;
+    float t = SphereTrace(p + 0.1 * n, l, 100.0, h, s);
+    if (!h) {
+        return 1.0;
+    }
+    return 0.0;
+}
+
+// Shading and lighting
+// p : Point
+// n : Normal at point
+// e : Eye direction
+// pos : Position source lumière)
+vec3 Shade(vec3 p, vec3 n, vec3 e, vec3 pos) {
+    // Point light
+    vec3 lp = /*vec3(-45.0, 10.0, 22.0)*/ pos;
+
+    // Light direction to point light
+    vec3 l = normalize(lp - p);
+
+    // Ambient color
+    vec3 ambient = 0.25 + 0.25 * background(n);
+
+    // Ambient occlusion
+    ambient += 0.15 * AmbientOcclusion(p + 0.1 * n, n, 5.0, 0) * vec3(1.0, 1.0, 1.0);
+
+    // Shadow computation
+    float shadow = Shadow(p, n, l);
+
+    // Phong diffuse
+    vec3 diffuse = 0.35 * clamp(dot(n, l), 0.0, 1.0) * vec3(1.0, 1.0, 1.0);
+
+    // Specular
+    vec3 r = reflect(e, n);
+    vec3 specular = 0.15 * pow(clamp(dot(r, l), 0.0, 1.0), 30.0) * vec3(1.0, 1.0, 1.0);
+    vec3 c = ambient + shadow * (diffuse + specular);
+    return c;
+}
+
+// Shading according to the number of steps in sphere tracing
+// n : Number of steps
+vec3 ShadeSteps(int n) {
+    float t = float(n) / (float(Steps - 1));
+    return 0.5 + mix(vec3(0.05, 0.05, 0.5), vec3(0.65, 0.39, 0.65), t);
+}
+
+// Picture in picture
+// pixel : Pixel
+// pip : Boolean, true if pixel was in sub-picture zone
+vec2 Pip(in vec2 pixel, out bool pip) {
+    // Pixel coordinates
+    vec2 p = (-push.resolution.xy + 2.0 * pixel) / push.resolution.y;
+    if (pip == true) {
+        const float fraction = 1.0 / 4.0;
+        // Recompute pixel coordinates in sub-picture
+        if ((pixel.x < push.resolution.x * fraction) && (pixel.y < push.resolution.y * fraction)) {
+            p = (-push.resolution.xy * fraction + 2.0 * pixel) / (push.resolution.y * fraction);
+            pip = true;
+        } else {
+            pip = false;
+        }
+    }
+    return p;
+}
+
+// Image
+void main() {
+    if (gl_GlobalInvocationID.x >= push.resolution.x || gl_GlobalInvocationID.y >= push.resolution.y) return;
+    // Picture in picture on
+    bool pip = true;
+
+    // Pixel
+    vec2 pixel = Pip(gl_GlobalInvocationID.xy, pip);
+    vec3 ro, rd;
+    Ray(ro, rd, ubo.view, ubo.projection);
+    // ro = ro.xzy;
+    rd = rd.xzy;
+
+    // Trace ray
+
+    // Hit and number of steps
+    bool hit;
+    int s;
+
+    bool hit2;
+    int s2;
+
+    float t = SphereTrace(ro, rd, 500.0, hit, s);
+
+    // Position
+    vec3 pt = ro + t * rd;
+    float epaisseur = SphereTrace2(pt, rd, 500.0, hit2, s2);
+
+    // Shade background
+    vec3 rgb = imageLoad(inputImage, ivec2(gl_GlobalInvocationID.xy)).rgb;
+
+    if (hit) {
+        // Compute normal
+        vec3 n = ObjectNormal(pt);
+
+        // Shade object with light
+        vec3 rgb2 = Shade(pt, n, rd, ubo.sunDirection.xyz);
+        rgb = mix(rgb2, rgb, exp(-0.7 * epaisseur));
+    }
+    imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), vec4(rgb, 1));
+}

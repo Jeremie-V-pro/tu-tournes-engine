@@ -1,0 +1,58 @@
+#version 450
+
+// Input DATA //////////////////////////
+
+layout(set = 0, binding = 4, rgba32f) uniform readonly image2D spectrumConjugate;
+
+layout(set = 0, binding = 5, rgba32f) uniform readonly image2D WavesData;
+
+layout(push_constant) uniform Push {
+    vec2 resolution;
+    float time;
+}
+push;
+
+// Output DATA //////////////////////////
+
+layout(set = 0, binding = 0, rg32f) uniform writeonly image2D Dx_Dz;
+layout(set = 0, binding = 1, rg32f) uniform writeonly image2D Dy_Dxz;
+layout(set = 0, binding = 2, rg32f) uniform writeonly image2D Dyx_Dyz;
+layout(set = 0, binding = 3, rg32f) uniform writeonly image2D Dxx_Dzz;
+
+// Function /////////////////////////////
+
+vec2 ComplexMult(in vec2 a, in vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+void main() {
+    if (gl_GlobalInvocationID.x >= push.resolution.x || gl_GlobalInvocationID.y >= push.resolution.y) return;
+
+    vec4 wave = imageLoad(WavesData, ivec2(gl_GlobalInvocationID.xy));
+
+    float phase = wave.w * push.time;
+    vec2 exponent = vec2(cos(phase), sin(phase));
+    vec2 h =
+        ComplexMult(imageLoad(spectrumConjugate, ivec2(gl_GlobalInvocationID.xy)).xy, exponent) +
+        ComplexMult(imageLoad(spectrumConjugate, ivec2(gl_GlobalInvocationID.xy)).zw, vec2(exponent.x, -exponent.y));
+    vec2 ih = vec2(-h.y, h.x);
+
+    vec2 displacementX = ih * wave.x * wave.y;
+    vec2 displacementY = h;
+    vec2 displacementZ = ih * wave.z * wave.y;
+
+    vec2 displacementX_dx = -h * wave.x * wave.x * wave.y;
+    vec2 displacementY_dx = ih * wave.x;
+    vec2 displacementZ_dx = -h * wave.x * wave.z * wave.y;
+
+    vec2 displacementY_dz = ih * wave.z;
+    vec2 displacementZ_dz = -h * wave.z * wave.z * wave.y;
+
+    imageStore(Dx_Dz, ivec2(gl_GlobalInvocationID.xy),
+               vec4(vec2(displacementX.x - displacementZ.y, displacementX.y + displacementZ.x), 0, 0));
+    imageStore(Dy_Dxz, ivec2(gl_GlobalInvocationID.xy),
+               vec4(vec2(displacementY.x - displacementZ_dx.y, displacementY.y + displacementZ_dx.x), 0, 0));
+    imageStore(Dyx_Dyz, ivec2(gl_GlobalInvocationID.xy),
+               vec4(vec2(displacementY_dx.x - displacementY_dz.y, displacementY_dx.y + displacementY_dz.x), 0, 0));
+    imageStore(Dxx_Dzz, ivec2(gl_GlobalInvocationID.xy),
+               vec4(vec2(displacementX_dx.x - displacementZ_dz.y, displacementX_dx.y + displacementZ_dz.x), 0, 0));
+}

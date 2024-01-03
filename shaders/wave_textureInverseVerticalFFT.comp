@@ -1,0 +1,53 @@
+#version 450
+
+// Structs /////////////////////////////
+
+// Input DATA //////////////////////////
+
+layout(push_constant) uniform Push {
+    vec2 resolution;
+    bool PingPong;
+    uint Step;
+}
+push;
+
+layout(set = 0, binding = 2, rgba32f) uniform readonly image2D PrecomputedData;
+
+// Output DATA //////////////////////////
+
+// In and Output DATA //////////////////////////
+
+layout(set = 0, binding = 0, rg32f) uniform image2D Buffer0;
+layout(set = 0, binding = 1, rg32f) uniform image2D Buffer1;
+
+// Function /////////////////////////////
+
+vec2 ComplexMult(in vec2 a, in vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
+
+/////// !! ////////////////////////////////////
+/////// Taille des invocation à revoir ////////
+///////////////////////////////////////////////
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+void main() {
+    if (gl_GlobalInvocationID.x >= push.resolution.x || gl_GlobalInvocationID.y >= push.resolution.y) return;
+
+    // float4 data = PrecomputedData[uint2(Step, id.x)];
+    vec4 data = imageLoad(PrecomputedData, ivec2(push.Step, gl_GlobalInvocationID.y));
+    uvec2 inputsIndices = uvec2(data.ba);
+    if (push.PingPong) {
+        vec2 data1 = imageLoad(Buffer0, ivec2(gl_GlobalInvocationID.x, inputsIndices.x)).rg;
+        vec2 data2 =
+            ComplexMult(vec2(data.r, -data.g), imageLoad(Buffer0, ivec2(gl_GlobalInvocationID.x, inputsIndices.y)).rg);
+        imageStore(Buffer1, ivec2(gl_GlobalInvocationID.xy), vec4(data1 + data2, 0, 0));
+    } else {
+        vec2 data1 = imageLoad(Buffer1, ivec2(gl_GlobalInvocationID.x, inputsIndices.x)).rg;
+        vec2 data2 =
+            ComplexMult(vec2(data.r, -data.g), imageLoad(Buffer1, ivec2(gl_GlobalInvocationID.x, inputsIndices.y)).rg);
+        imageStore(Buffer0, ivec2(gl_GlobalInvocationID.xy), vec4(data1 + data2, 0, 0));
+    }
+
+    // vec2 h0K = imageLoad(spectrum, ivec2(gl_GlobalInvocationID.xy)).rg;
+
+    // imageStore(spectrumConjugate, ivec2(gl_GlobalInvocationID.xy), vec4(h0K.x, h0K.y, h0MinusK.x, -h0MinusK.y));
+}

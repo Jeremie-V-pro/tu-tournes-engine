@@ -1,27 +1,20 @@
 #pragma once
+#include <vulkan/vulkan_core.h>
 
-#include "lve_buffer.hpp"
-#include "lve_device.hpp"
-#include "lve_descriptor.hpp"
-
+#include <cstdint>
 #include <memory>
 #include <vector>
 
+#include "lve_device.hpp"
 
-namespace lve{
-class LveTexture{
-  public:
-
+namespace lve {
+class LveTexture {
+   public:
     LveTexture(LveDevice& device, const std::string& filepath, bool isComputeTexture);
     LveTexture(LveDevice& device, int width, int height);
+
+    LveTexture(LveDevice& device, int width, int height, void* image, int numberOfChannels, VkFormat textureFormat);
     ~LveTexture();
-
-    LveTexture(const LveTexture &) = delete;
-    LveTexture &operator=(const LveTexture &) = delete;
-    LveTexture(LveTexture &&) = delete;
-    LveTexture &operator=(LveTexture &&) = delete;
-
-   
 
     VkSampler getSampler() const { return sampler; }
     VkImageView getImageView() const { return imageView; }
@@ -34,12 +27,15 @@ class LveTexture{
 
     void postprocessingTextureConstructor(int width, int height);
 
-    
+    void cpuTextureConstructor(int width, int height, void* image, int numberOfChannels, VkFormat textureFormat);
 
-    
+    static void copyTexture(VkCommandBuffer commandBuffer, std::shared_ptr<LveTexture> textureFromCopy,
+                            std::shared_ptr<LveTexture> textureToCopy);
 
-  private:
+    int width;
+    int height;
 
+   private:
     LveDevice& lveDevice;
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
@@ -49,8 +45,5 @@ class LveTexture{
     VkImageLayout imageLayout;
 
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
-
-    
-
 };
-}
+}  // namespace lve

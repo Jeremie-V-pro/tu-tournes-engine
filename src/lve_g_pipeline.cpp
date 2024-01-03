@@ -1,41 +1,40 @@
 #include "lve_g_pipeline.hpp"
-#include "lve_model.hpp"
+
+#include <vulkan/vulkan_core.h>
+
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
-#include <cassert>
+
+#include "lve_model.hpp"
 
 #ifndef ENGINE_DIR
 #define ENGINE_DIR "../"
 #endif
 
-namespace lve
-{
-  LveGPipeline::LveGPipeline(LveDevice &device, const std::string &vertFilepath, const std::string &fragFilepath, const PipelineConfigInfo &configInfo) : lveDevice{device}
-  {
+namespace lve {
+LveGPipeline::LveGPipeline(LveDevice &device, const std::string &vertFilepath, const std::string &fragFilepath,
+                           const PipelineConfigInfo &configInfo)
+    : lveDevice{device} {
     creatGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
-  }
+}
 
-  LveGPipeline::~LveGPipeline()
-  {
+LveGPipeline::~LveGPipeline() {
     vkDestroyShaderModule(lveDevice.device(), vertShaderModule, nullptr);
     vkDestroyShaderModule(lveDevice.device(), fragShaderModule, nullptr);
     vkDestroyPipeline(lveDevice.device(), graphicsPipeLine, nullptr);
-  }
+}
 
-  std::vector<char> LveGPipeline::readFile(const std::string &filepath)
-  {
-
+std::vector<char> LveGPipeline::readFile(const std::string &filepath) {
     std::string enginePath = ENGINE_DIR + filepath;
 
     std::ifstream file{enginePath, std::ios::ate | std::ios::binary};
 
-    if (!file.is_open())
-    {
-      throw std::runtime_error("failed to open file : " + enginePath);
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file : " + enginePath);
     }
 
     size_t fileSize = static_cast<size_t>(file.tellg());
@@ -45,12 +44,14 @@ namespace lve
     file.read(buffer.data(), fileSize);
     file.close();
     return buffer;
-  }
+}
 
-  void LveGPipeline::creatGraphicsPipeline(const std::string &vertFilepath, const std::string &fragFilepath, const PipelineConfigInfo &configInfo)
-  {
-    assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
-    assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
+void LveGPipeline::creatGraphicsPipeline(const std::string &vertFilepath, const std::string &fragFilepath,
+                                         const PipelineConfigInfo &configInfo) {
+    assert(configInfo.pipelineLayout != VK_NULL_HANDLE &&
+           "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
+    assert(configInfo.renderPass != VK_NULL_HANDLE &&
+           "Cannot create graphics pipeline:: no renderPass provided in configInfo");
     auto vertCode = readFile(vertFilepath);
     auto fragCode = readFile(fragFilepath);
 
@@ -104,33 +105,28 @@ namespace lve
     pipelineInfo.basePipelineIndex = -1;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(lveDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeLine) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to create graphic pipeline");
+    if (vkCreateGraphicsPipelines(lveDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeLine) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphic pipeline");
     }
-  }
+}
 
-  void LveGPipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule)
-  {
+void LveGPipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-    if (vkCreateShaderModule(lveDevice.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to create shader module");
+    if (vkCreateShaderModule(lveDevice.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module");
     }
-  }
+}
 
-  void LveGPipeline::bind(VkCommandBuffer commandBuffer)
-  {
+void LveGPipeline::bind(VkCommandBuffer commandBuffer) {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
-  }
+}
 
-  void LveGPipeline::defaultPipeLineConfigInfo(PipelineConfigInfo &configInfo)
-  {
-
+void LveGPipeline::defaultPipeLineConfigInfo(PipelineConfigInfo &configInfo) {
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
@@ -149,49 +145,48 @@ namespace lve
     configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
     configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
     configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
-    configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f; // Optional
-    configInfo.rasterizationInfo.depthBiasClamp = 0.0f;          // Optional
-    configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;    // Optional
+    configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f;  // Optional
+    configInfo.rasterizationInfo.depthBiasClamp = 0.0f;           // Optional
+    configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;     // Optional
 
     configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
     configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    configInfo.multisampleInfo.minSampleShading = 1.0f;          // Optional
-    configInfo.multisampleInfo.pSampleMask = nullptr;            // Optional
-    configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE; // Optional
-    configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;      // Optional
+    configInfo.multisampleInfo.minSampleShading = 1.0f;           // Optional
+    configInfo.multisampleInfo.pSampleMask = nullptr;             // Optional
+    configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE;  // Optional
+    configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;       // Optional
 
     configInfo.colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
-    configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-    configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
-    configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-    configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
+    configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+    configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+    configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;              // Optional
+    configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+    configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+    configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
 
     configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
-    configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
+    configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;  // Optional
     configInfo.colorBlendInfo.attachmentCount = 1;
     configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
-    configInfo.colorBlendInfo.blendConstants[0] = 0.0f; // Optional
-    configInfo.colorBlendInfo.blendConstants[1] = 0.0f; // Optional
-    configInfo.colorBlendInfo.blendConstants[2] = 0.0f; // Optional
-    configInfo.colorBlendInfo.blendConstants[3] = 0.0f; // Optional
+    configInfo.colorBlendInfo.blendConstants[0] = 0.0f;  // Optional
+    configInfo.colorBlendInfo.blendConstants[1] = 0.0f;  // Optional
+    configInfo.colorBlendInfo.blendConstants[2] = 0.0f;  // Optional
+    configInfo.colorBlendInfo.blendConstants[3] = 0.0f;  // Optional
 
     configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
     configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
     configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
     configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
-    configInfo.depthStencilInfo.minDepthBounds = 0.0f; // Optional
-    configInfo.depthStencilInfo.maxDepthBounds = 1.0f; // Optional
+    configInfo.depthStencilInfo.minDepthBounds = 0.0f;  // Optional
+    configInfo.depthStencilInfo.maxDepthBounds = 1.0f;  // Optional
     configInfo.depthStencilInfo.stencilTestEnable = VK_FALSE;
-    configInfo.depthStencilInfo.front = {}; // Optional
-    configInfo.depthStencilInfo.back = {};  // Optional
+    configInfo.depthStencilInfo.front = {};  // Optional
+    configInfo.depthStencilInfo.back = {};   // Optional
 
     configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -201,19 +196,17 @@ namespace lve
 
     configInfo.bindingDescriptions = LveModel::Vertex::getBindingDescriptions();
     configInfo.attributeDescriptions = LveModel::Vertex::getAttributeDescriptions();
-  }
+}
 
-  void LveGPipeline::enableAlphaBlending(PipelineConfigInfo &configInfo)
-  {
+void LveGPipeline::enableAlphaBlending(PipelineConfigInfo &configInfo) {
     configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
     configInfo.colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
     configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-  }
 }
+}  // namespace lve
